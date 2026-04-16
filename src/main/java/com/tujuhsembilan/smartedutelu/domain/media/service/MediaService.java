@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.media.service;
 
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
+import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
@@ -11,12 +12,20 @@ import com.tujuhsembilan.smartedutelu.domain.media.entity.MediaFile;
 import com.tujuhsembilan.smartedutelu.domain.media.repository.MediaFileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -26,10 +35,33 @@ public class MediaService {
 
     private final MediaFileRepository mediaFileRepository;
     private final UserRepository userRepository;
+    private final S3Client s3Client;
+
+    @Value("${application.minio.bucket}")
+    private String bucket;
+
+    @Value("${application.minio.endpoint}")
+    private String endpoint;
+
+    private static final Set<String> ALLOWED_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp",
+            "video/mp4", "video/webm",
+            "application/pdf",
+            "audio/mpeg", "audio/mp3"
+    );
+
+    private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
     @Transactional(readOnly = true)
     public Page<MediaResponse> listByOwner(UUID ownerId, Pageable pageable) {
         return mediaFileRepository.findByOwnerId(ownerId, pageable).map(MediaResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<MediaResponse> listRecentByCurrentUser(Pageable pageable) {
+        User user = resolveCurrentUser();
+        return mediaFileRepository.findByOwnerIdOrderByUploadedAtDesc(user.getId(), pageable)
+                .map(MediaResponse::from);
     }
 
     @Transactional(readOnly = true)
@@ -43,6 +75,52 @@ public class MediaService {
         MediaFile file = mediaFileRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_MDA_001));
         return MediaResponse.from(file);
+    }
+
+    @Transactional
+    public MediaResponse uploadMedia(MultipartFile file, String context, UUID contextId) {
+        if (file.isEmpty()) {
+            throw new BusinessException(ErrorCode.SE_CMN_001);
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new BusinessException(ErrorCode.SE_CMN_001);
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_TYPES.contains(contentType.toLowerCase())) {
+            throw new BusinessException(ErrorCode.SE_CMN_001);
+        }
+
+        User currentUser = resolveCurrentUser();
+
+        String extension = getExtension(file.getOriginalFilename());
+        String key = "media/" + UUID.randomUUID() + extension;
+
+        try {
+            s3Client.putObject(
+                    PutObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(key)
+                            .contentType(contentType)
+                            .build(),
+                    RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        } catch (IOException e) {
+            log.error("Failed to upload file to S3", e);
+            throw new BusinessException(ErrorCode.SE_CMN_007);
+        }
+
+        String fileUrl = endpoint + "/" + bucket + "/" + key;
+
+        MediaFile mediaFile = MediaFile.builder()
+                .owner(currentUser)
+                .fileName(file.getOriginalFilename())
+                .filePath(fileUrl)
+                .fileType(contentType)
+                .fileSize((int) file.getSize())
+                .context(context)
+                .contextId(contextId)
+                .build();
+
+        return MediaResponse.from(mediaFileRepository.save(mediaFile));
     }
 
     @Transactional
@@ -66,7 +144,25 @@ public class MediaService {
     public void deleteMedia(UUID id) {
         MediaFile file = mediaFileRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_MDA_001));
+
+        // Try to delete from S3 if the path matches our bucket
+        String prefix = endpoint + "/" + bucket + "/";
+        if (file.getFilePath() != null && file.getFilePath().startsWith(prefix)) {
+            String key = file.getFilePath().substring(prefix.length());
+            try {
+                s3Client.deleteObject(DeleteObjectRequest.builder()
+                        .bucket(bucket).key(key).build());
+            } catch (Exception e) {
+                log.warn("Failed to delete S3 object: {}", key, e);
+            }
+        }
+
         mediaFileRepository.delete(file);
+    }
+
+    private String getExtension(String filename) {
+        if (filename == null || !filename.contains(".")) return "";
+        return filename.substring(filename.lastIndexOf('.'));
     }
 
     private User resolveCurrentUser() {

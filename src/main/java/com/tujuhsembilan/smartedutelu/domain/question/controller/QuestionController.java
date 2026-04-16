@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.question.controller;
 
 import com.tujuhsembilan.smartedutelu.common.dto.ApiResponse;
 import com.tujuhsembilan.smartedutelu.common.dto.PageResponse;
+import com.tujuhsembilan.smartedutelu.domain.media.dto.response.MediaResponse;
 import com.tujuhsembilan.smartedutelu.domain.question.dto.request.*;
 import com.tujuhsembilan.smartedutelu.domain.question.dto.response.*;
 import com.tujuhsembilan.smartedutelu.domain.question.service.QuestionCategoryService;
@@ -166,6 +167,42 @@ public class QuestionController {
             @PathVariable UUID attachmentId) {
         questionService.deleteAttachment(tenantId, questionId, attachmentId);
         return ResponseEntity.ok(ApiResponse.success("Lampiran berhasil dihapus", null));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    //  MEDIA (3 endpoints)
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/{questionId}/media")
+    @Operation(summary = "Daftar media yang terkait dengan soal")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<ApiResponse<List<MediaResponse>>> listQuestionMedia(
+            @RequestParam UUID tenantId,
+            @PathVariable UUID questionId) {
+        List<MediaResponse> media = questionService.getMediaForQuestion(questionId);
+        return ResponseEntity.ok(ApiResponse.success("Media soal berhasil diambil", media));
+    }
+
+    @PostMapping("/{questionId}/media")
+    @Operation(summary = "Lampirkan media ke soal")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<ApiResponse<Void>> attachMedia(
+            @RequestParam UUID tenantId,
+            @PathVariable UUID questionId,
+            @RequestBody List<UUID> mediaIds) {
+        questionService.attachMedia(tenantId, questionId, mediaIds);
+        return ResponseEntity.ok(ApiResponse.success("Media berhasil dilampirkan ke soal", null));
+    }
+
+    @DeleteMapping("/{questionId}/media/{mediaId}")
+    @Operation(summary = "Lepaskan media dari soal")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<ApiResponse<Void>> detachMedia(
+            @RequestParam UUID tenantId,
+            @PathVariable UUID questionId,
+            @PathVariable UUID mediaId) {
+        questionService.detachMedia(tenantId, questionId, mediaId);
+        return ResponseEntity.ok(ApiResponse.success("Media berhasil dilepas dari soal", null));
     }
 
     // ══════════════════════════════════════════════════════════════════════════════

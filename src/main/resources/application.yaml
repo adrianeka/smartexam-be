@@ -87,6 +87,11 @@ application:
   rate-limit:
     max-requests: ${RATE_LIMIT_MAX_REQUESTS:10}
     window-ms: ${RATE_LIMIT_WINDOW_MS:60000}
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    bucket: ${MINIO_BUCKET:smartedutelu-media}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
 
 # ── Actuator ───────────────────────────────────────────
 management:

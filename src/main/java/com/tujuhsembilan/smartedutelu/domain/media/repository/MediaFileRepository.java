@@ -12,5 +12,7 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, UUID> {
 
     Page<MediaFile> findByOwnerId(UUID ownerId, Pageable pageable);
 
+    Page<MediaFile> findByOwnerIdOrderByUploadedAtDesc(UUID ownerId, Pageable pageable);
+
     List<MediaFile> findByContextAndContextId(String context, UUID contextId);
 }

@@ -6,6 +6,9 @@ import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRepository;
+import com.tujuhsembilan.smartedutelu.domain.media.dto.response.MediaResponse;
+import com.tujuhsembilan.smartedutelu.domain.media.entity.MediaFile;
+import com.tujuhsembilan.smartedutelu.domain.media.repository.MediaFileRepository;
 import com.tujuhsembilan.smartedutelu.domain.question.dto.request.*;
 import com.tujuhsembilan.smartedutelu.domain.question.dto.response.AttachmentResponse;
 import com.tujuhsembilan.smartedutelu.domain.question.dto.response.OptionResponse;
@@ -36,6 +39,8 @@ public class QuestionService {
     private final QuestionAttachmentRepository attachmentRepository;
     private final QuestionCategoryRepository categoryRepository;
     private final QuestionFolderRepository folderRepository;
+    private final QuestionMediaRepository questionMediaRepository;
+    private final MediaFileRepository mediaFileRepository;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
 
@@ -121,6 +126,22 @@ public class QuestionService {
         }
 
         question = questionRepository.save(question);
+
+        // Link media files
+        if (request.getMediaIds() != null && !request.getMediaIds().isEmpty()) {
+            int pos = 0;
+            for (UUID mediaId : request.getMediaIds()) {
+                MediaFile mediaFile = mediaFileRepository.findById(mediaId)
+                        .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_MDA_001));
+                QuestionMedia qm = QuestionMedia.builder()
+                        .question(question)
+                        .mediaFile(mediaFile)
+                        .position(pos++)
+                        .build();
+                questionMediaRepository.save(qm);
+            }
+        }
+
         log.info("Created question: {} [tenant={}]", question.getId(), tenant.getName());
         return toResponseFull(question);
     }
@@ -247,6 +268,41 @@ public class QuestionService {
         log.info("Deleted attachment {} from question {}", attachmentId, questionId);
     }
 
+    // ── Media management (many-to-many via question_media) ──────────────────────
+
+    @Transactional
+    public List<MediaResponse> attachMedia(UUID tenantId, UUID questionId, List<UUID> mediaIds) {
+        Question question = questionRepository.findByIdAndTenantId(questionId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_QST_001));
+
+        int startPos = questionMediaRepository.findByQuestionIdOrderByPositionAsc(questionId).size();
+        for (UUID mediaId : mediaIds) {
+            if (questionMediaRepository.existsByQuestionIdAndMediaFileId(questionId, mediaId)) continue;
+            MediaFile mediaFile = mediaFileRepository.findById(mediaId)
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_MDA_001));
+            QuestionMedia qm = QuestionMedia.builder()
+                    .question(question)
+                    .mediaFile(mediaFile)
+                    .position(startPos++)
+                    .build();
+            questionMediaRepository.save(qm);
+        }
+        return getMediaForQuestion(questionId);
+    }
+
+    @Transactional
+    public void detachMedia(UUID tenantId, UUID questionId, UUID mediaId) {
+        questionRepository.findByIdAndTenantId(questionId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_QST_001));
+        questionMediaRepository.deleteByQuestionIdAndMediaFileId(questionId, mediaId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MediaResponse> getMediaForQuestion(UUID questionId) {
+        return questionMediaRepository.findByQuestionIdOrderByPositionAsc(questionId)
+                .stream().map(qm -> MediaResponse.from(qm.getMediaFile())).toList();
+    }
+
     // ── Mapping helpers ─────────────────────────────────────────────────────────
 
     private QuestionResponse toResponseSummary(Question q) {
@@ -283,6 +339,12 @@ public class QuestionService {
         if (q.getAttachments() != null) {
             response.setAttachments(q.getAttachments().stream().map(this::toAttachmentResponse).toList());
         }
+
+        List<QuestionMedia> questionMedia = questionMediaRepository.findByQuestionIdOrderByPositionAsc(q.getId());
+        if (!questionMedia.isEmpty()) {
+            response.setMedia(questionMedia.stream().map(qm -> MediaResponse.from(qm.getMediaFile())).toList());
+        }
+
         return response;
     }
 

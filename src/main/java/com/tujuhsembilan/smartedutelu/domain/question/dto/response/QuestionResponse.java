@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.question.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.tujuhsembilan.smartedutelu.domain.media.dto.response.MediaResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,4 +40,5 @@ public class QuestionResponse {
     private OffsetDateTime updatedAt;
     private List<OptionResponse> options;
     private List<AttachmentResponse> attachments;
+    private List<MediaResponse> media;
 }

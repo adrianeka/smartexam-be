@@ -35,6 +35,8 @@ public class CreateQuestionRequest {
 
     private Boolean isShared;
 
+    private List<UUID> mediaIds;
+
     @Valid
     private List<OptionRequest> options;
 
