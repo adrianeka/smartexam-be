@@ -87,7 +87,19 @@ public enum ErrorCode {
     SE_GRD_004("SE-GRD-004", "Rubric not found"),
     SE_GRD_005("SE-GRD-005", "Rubric criteria not found"),
     SE_GRD_006("SE-GRD-006", "Result not found"),
-    SE_GRD_007("SE-GRD-007", "Result already published");
+    SE_GRD_007("SE-GRD-007", "Result already published"),
+
+    // Results & Analytics Errors (SE-RES-xxx)
+    SE_RES_001("SE-RES-001", "Exam result not found"),
+    SE_RES_002("SE-RES-002", "Result already published"),
+    SE_RES_003("SE-RES-003", "Appeal not found"),
+    SE_RES_004("SE-RES-004", "Appeal already resolved"),
+    SE_RES_005("SE-RES-005", "Analytics not found"),
+
+    // Certificate Errors (SE-CRT-xxx)
+    SE_CRT_001("SE-CRT-001", "Certificate template not found"),
+    SE_CRT_002("SE-CRT-002", "Certificate not found"),
+    SE_CRT_003("SE-CRT-003", "Certificate number already exists");
 
     private final String code;
     private final String message;
