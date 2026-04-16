@@ -48,7 +48,21 @@ public enum ErrorCode {
     SE_TNT_002("SE-TNT-002", "Tenant domain already exists"),
     SE_TNT_003("SE-TNT-003", "User is already a member of this tenant"),
 
-    // Exam Management Errors (SE-EXM-xxx) - Contoh untuk SmartEdu
+    // Exam Category Errors (SE-CAT-xxx)
+    SE_CAT_001("SE-CAT-001", "Exam category not found"),
+    SE_CAT_002("SE-CAT-002", "Slug already exists in this tenant"),
+    SE_CAT_003("SE-CAT-003", "Cannot set a category as its own parent"),
+    SE_CAT_004("SE-CAT-004", "Cannot set a descendant as parent (circular reference)"),
+
+    // Question Bank Errors (SE-QST-xxx)
+    SE_QST_001("SE-QST-001", "Question not found"),
+    SE_QST_002("SE-QST-002", "Question option not found"),
+    SE_QST_003("SE-QST-003", "Question attachment not found"),
+    SE_QST_004("SE-QST-004", "Question folder not found"),
+    SE_QST_005("SE-QST-005", "Question category not found"),
+    SE_QST_006("SE-QST-006", "Question category name already exists in this tenant"),
+
+    // Exam Management Errors (SE-EXM-xxx)
     SE_EXM_001("SE-EXM-001", "Exam not found"),
     SE_EXM_002("SE-EXM-002", "Exam is currently active and cannot be modified");
 
