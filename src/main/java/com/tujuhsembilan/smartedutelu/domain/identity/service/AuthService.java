@@ -26,6 +26,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ua_parser.Client;
+import ua_parser.Parser;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -55,6 +57,8 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final StringRedisTemplate redisTemplate;
+    /** J13: User-Agent parser dari uap-java untuk device detection yang akurat. */
+    private final Parser uaParser;
 
     private static final String LOGIN_FAIL_PREFIX = "login_fail:";
 
@@ -408,11 +412,14 @@ public class AuthService {
         return false;
     }
 
+    /** J13: Proper device parsing menggunakan uap-java (ua-parser). */
     private String parseDevice(String userAgent) {
-        if (userAgent == null) return "Unknown";
-        if (userAgent.contains("Mobile")) return "Mobile";
-        if (userAgent.contains("Tablet")) return "Tablet";
-        return "Desktop";
+        if (userAgent == null || userAgent.isBlank()) return "Unknown";
+        Client client = uaParser.parse(userAgent);
+        String device = client.device.family;
+        return (device == null || device.isBlank() || "Other".equalsIgnoreCase(device))
+                ? "Desktop"
+                : device;
     }
 
     /**

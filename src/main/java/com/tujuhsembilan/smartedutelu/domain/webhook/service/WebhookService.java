@@ -59,7 +59,7 @@ public class WebhookService {
                 .name(request.getName())
                 .url(request.getUrl())
                 .secret(secret)
-                .events(String.join(",", request.getEvents()))
+                .events(new java.util.ArrayList<>(request.getEvents()))
                 .build();
 
         return WebhookResponse.from(webhookRepository.save(webhook));
@@ -78,7 +78,7 @@ public class WebhookService {
         if (request.getSecret() != null) webhook.setSecret(request.getSecret());
         if (request.getEvents() != null) {
             validateEvents(request.getEvents());
-            webhook.setEvents(String.join(",", request.getEvents()));
+            webhook.setEvents(new java.util.ArrayList<>(request.getEvents()));
         }
         if (request.getIsActive() != null) webhook.setIsActive(request.getIsActive());
 

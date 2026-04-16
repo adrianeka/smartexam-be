@@ -1,5 +1,6 @@
 package com.tujuhsembilan.smartedutelu.domain.identity.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +23,7 @@ public class EmailService {
     private String passwordResetUrl;
 
     @Async
+    @CircuitBreaker(name = "email", fallbackMethod = "sendPasswordResetEmailFallback")
     public void sendPasswordResetEmail(String toEmail, String token) {
         try {
             String resetLink = passwordResetUrl + "?token=" + token;
@@ -48,5 +50,11 @@ public class EmailService {
             log.error("Gagal mengirim email reset password ke {}: {} — {}",
                     toEmail, e.getClass().getSimpleName(), e.getMessage());
         }
+    }
+
+    // J8: Circuit breaker fallback — dipanggil saat mail server tidak dapat dijangkau
+    private void sendPasswordResetEmailFallback(String toEmail, String token, Throwable t) {
+        log.error("Circuit breaker aktif: email service tidak tersedia. Email ke {} tidak dikirim. Penyebab: {}",
+                toEmail, t.getMessage());
     }
 }

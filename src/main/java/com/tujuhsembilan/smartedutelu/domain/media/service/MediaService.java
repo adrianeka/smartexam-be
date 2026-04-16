@@ -10,6 +10,7 @@ import com.tujuhsembilan.smartedutelu.domain.media.dto.request.CreateMediaReques
 import com.tujuhsembilan.smartedutelu.domain.media.dto.response.MediaResponse;
 import com.tujuhsembilan.smartedutelu.domain.media.entity.MediaFile;
 import com.tujuhsembilan.smartedutelu.domain.media.repository.MediaFileRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -95,6 +96,7 @@ public class MediaService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "s3", fallbackMethod = "uploadMediaFallback")
     public MediaResponse uploadMedia(MultipartFile file, String context, UUID contextId) {
         if (file.isEmpty()) {
             throw new BusinessException(ErrorCode.SE_CMN_001);
@@ -214,6 +216,13 @@ public class MediaService {
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.SE_CMN_007, "Gagal membaca file");
         }
+    }
+
+    // J8: Circuit breaker fallback — dipanggil saat S3 tidak dapat dijangkau
+    private MediaResponse uploadMediaFallback(MultipartFile file, String context, UUID contextId, Throwable t) {
+        log.error("Circuit breaker aktif: S3 tidak tersedia. Upload gagal untuk file '{}'. Penyebab: {}",
+                file.getOriginalFilename(), t.getMessage());
+        throw new BusinessException(ErrorCode.SE_CMN_007, "Layanan penyimpanan sementara tidak tersedia, coba lagi nanti");
     }
 
 }

@@ -159,6 +159,20 @@
 			<artifactId>s3</artifactId>
 			<version>2.25.60</version>
 		</dependency>
+
+		<!-- J8: Circuit breaker untuk external calls (email, S3, webhook) -->
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot3</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+
+		<!-- J13: Proper User-Agent parsing -->
+		<dependency>
+			<groupId>com.github.ua-parser</groupId>
+			<artifactId>uap-java</artifactId>
+			<version>1.6.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>

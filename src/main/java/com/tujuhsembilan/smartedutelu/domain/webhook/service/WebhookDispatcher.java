@@ -7,6 +7,7 @@ import com.tujuhsembilan.smartedutelu.domain.webhook.entity.WebhookLog;
 import com.tujuhsembilan.smartedutelu.domain.webhook.enums.WebhookEvent;
 import com.tujuhsembilan.smartedutelu.domain.webhook.repository.WebhookLogRepository;
 import com.tujuhsembilan.smartedutelu.domain.webhook.repository.WebhookRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -21,7 +22,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +53,7 @@ public class WebhookDispatcher {
      * @param payload   data event yang akan dikirim sebagai JSON
      */
     @Async
+    @CircuitBreaker(name = "webhook")
     public void dispatch(UUID tenantId, WebhookEvent event, Map<String, Object> payload) {
         List<Webhook> candidates = webhookRepository.findByTenantIdAndIsActiveTrue(tenantId);
 
@@ -62,8 +63,7 @@ public class WebhookDispatcher {
 
         for (Webhook webhook : candidates) {
             // Cek apakah webhook subscribe ke event ini
-            boolean subscribed = Arrays.stream(webhook.getEvents().split(","))
-                    .map(String::trim)
+            boolean subscribed = webhook.getEvents().stream()
                     .anyMatch(e -> e.equalsIgnoreCase(event.getValue()));
             if (!subscribed) continue;
 
