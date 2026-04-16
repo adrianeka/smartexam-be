@@ -20,6 +20,12 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 20000
 
+  # ── File Upload Limits ────────────────────────────────
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:50MB}
+      max-request-size: ${MAX_REQUEST_SIZE:55MB}
+
   # ── JPA / Hibernate ────────────────────────────────────
   jpa:
     hibernate:
@@ -75,7 +81,7 @@ application:
   security:
     jwt:
       secret-key: ${JWT_SECRET:dGhpc0lzQVN1cGVyU2VjcmV0S2V5Rm9yRGV2ZWxvcG1lbnRPbmx5UGxlYXNlQ2hhbmdlSW5Qcm9k}
-      expiration-ms: ${JWT_EXPIRATION:86400000} # 1 Hari (access token)
+      expiration-ms: ${JWT_EXPIRATION:900000} # 15 menit (access token)
       refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000} # 7 Hari (refresh token)
     # Kunci 256-bit (32 bytes) di-encode Base64 — WAJIB di-set via env var di production
     encryption-key: ${ENCRYPTION_KEY:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}

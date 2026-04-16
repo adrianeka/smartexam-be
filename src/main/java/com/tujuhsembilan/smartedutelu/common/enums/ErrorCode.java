@@ -1,14 +1,12 @@
 package com.tujuhsembilan.smartedutelu.common.enums;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Centralized error codes for the application.
  * Format: {DOMAIN}_{ERROR_TYPE}_{SEQUENCE}
  */
 @Getter
-@RequiredArgsConstructor
 public enum ErrorCode {
 
     // Common Errors (SE-CMN-xxx)
@@ -140,4 +138,9 @@ public enum ErrorCode {
 
     private final String code;
     private final String message;
+
+    ErrorCode(String code, String message) {
+        this.code = code;
+        this.message = message;
+    }
 }

@@ -82,8 +82,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 return;
             }
         } catch (Exception e) {
-            // If Redis is down, allow the request (fail-open) but log the issue
-            log.warn("Rate limiter Redis error, allowing request: {}", e.getMessage());
+            // A13: Fail-closed — kalau Redis down, tolak request daripada bypass rate limiter
+            log.error("Rate limiter Redis error, menolak request untuk keamanan: {}", e.getMessage());
+            response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ApiResponse<Void> body = ApiResponse.error(
+                    "SE_CMN_009",
+                    "Layanan sementara tidak tersedia",
+                    "Coba lagi beberapa saat"
+            );
+            objectMapper.findAndRegisterModules();
+            objectMapper.writeValue(response.getOutputStream(), body);
+            return;
         }
 
         filterChain.doFilter(request, response);

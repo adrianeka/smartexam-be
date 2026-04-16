@@ -150,12 +150,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(
             org.springframework.web.multipart.MaxUploadSizeExceededException ex, WebRequest request) {
-        log.error("Max upload size exceeded: {}", ex.getMessage());
+        log.warn("Max upload size exceeded: {}", ex.getMessage());
 
         ApiResponse<Void> response = ApiResponse.error(
                 ErrorCode.SE_CMN_001.getCode(),
-                "Maximum upload size exceeded",
-                ex.getMessage()
+                "Ukuran file melebihi batas maksimum yang diizinkan",
+                "Pastikan ukuran file tidak melebihi batas yang ditentukan"
         );
 
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(response);

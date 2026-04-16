@@ -29,6 +29,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -217,23 +222,33 @@ public class AuthService {
             // Delete any existing reset tokens
             passwordResetRepository.deleteByUserId(user.getId());
 
-            String token = UUID.randomUUID().toString();
+            // A4: Use SecureRandom for cryptographically secure token
+            byte[] randomBytes = new byte[32];
+            new SecureRandom().nextBytes(randomBytes);
+            String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
+            // A5: Store SHA-256 hash of token, not plaintext
+            String tokenHash = hashToken(rawToken);
+
             PasswordReset passwordReset = PasswordReset.builder()
                     .user(user)
-                    .token(token)
+                    .token(tokenHash)
                     .expiredAt(LocalDateTime.now().plusHours(1))
                     .build();
             passwordResetRepository.save(passwordReset);
 
-            emailService.sendPasswordResetEmail(user.getEmail(), token);
+            emailService.sendPasswordResetEmail(user.getEmail(), rawToken);
         });
     }
 
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
+        // A5: Hash the incoming raw token before lookup
+        String tokenHash = hashToken(request.getToken());
+
         // Atomically find and validate the token
         PasswordReset passwordReset = passwordResetRepository
-                .findByTokenAndExpiredAtAfter(request.getToken(), LocalDateTime.now())
+                .findByTokenAndExpiredAtAfter(tokenHash, LocalDateTime.now())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SE_AUT_005, "Token reset password tidak valid atau sudah expired"));
 
         User user = passwordReset.getUser();
@@ -244,7 +259,7 @@ public class AuthService {
         }
 
         // B3: Atomic token consumption — prevents TOCTOU race condition
-        int deleted = passwordResetRepository.deleteByTokenAndExpiredAtAfter(request.getToken(), LocalDateTime.now());
+        int deleted = passwordResetRepository.deleteByTokenAndExpiredAtAfter(tokenHash, LocalDateTime.now());
         if (deleted == 0) {
             throw new BusinessException(ErrorCode.SE_AUT_005, "Token reset password sudah digunakan atau expired");
         }
@@ -398,5 +413,19 @@ public class AuthService {
         if (userAgent.contains("Mobile")) return "Mobile";
         if (userAgent.contains("Tablet")) return "Tablet";
         return "Desktop";
+    }
+
+    /**
+     * A5: SHA-256 hash of a token for secure storage.
+     * Deterministic so we can query by hash without storing plaintext.
+     */
+    private String hashToken(String rawToken) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawToken.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 not available", e);
+        }
     }
 }
