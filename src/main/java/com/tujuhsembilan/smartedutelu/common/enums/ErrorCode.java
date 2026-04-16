@@ -40,6 +40,13 @@ public enum ErrorCode {
 
     // Organization / Tenant Errors (SE-ORG-xxx)
     SE_ORG_001("SE-ORG-001", "Organization not found"),
+    SE_ORG_002("SE-ORG-002", "Organization name already exists in this tenant"),
+    SE_ORG_003("SE-ORG-003", "User is already a member of this organization"),
+
+    // Tenant Errors (SE-TNT-xxx)
+    SE_TNT_001("SE-TNT-001", "Tenant not found"),
+    SE_TNT_002("SE-TNT-002", "Tenant domain already exists"),
+    SE_TNT_003("SE-TNT-003", "User is already a member of this tenant"),
 
     // Exam Management Errors (SE-EXM-xxx) - Contoh untuk SmartEdu
     SE_EXM_001("SE-EXM-001", "Exam not found"),
