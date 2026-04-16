@@ -4,6 +4,7 @@ import com.tujuhsembilan.smartedutelu.domain.evaluation.entity.ExamAttempt;
 import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"user", "exam"})
 @Entity
 @Table(name = "exam_results", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"user_id", "exam_id"})
@@ -63,7 +65,7 @@ public class ExamResult {
     @Column(name = "published_at")
     private OffsetDateTime publishedAt;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 }

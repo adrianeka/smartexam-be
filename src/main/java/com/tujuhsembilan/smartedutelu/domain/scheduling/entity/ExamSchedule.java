@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.scheduling.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -42,7 +43,7 @@ public class ExamSchedule {
     @Builder.Default
     private Boolean isActive = true;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 }

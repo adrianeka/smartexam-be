@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -15,17 +17,20 @@ public class WebhookResponse {
     private UUID tenantId;
     private String name;
     private String url;
-    private String events;
+    private List<String> events;
     private Boolean isActive;
     private OffsetDateTime createdAt;
 
     public static WebhookResponse from(Webhook w) {
+        List<String> eventList = (w.getEvents() != null && !w.getEvents().isBlank())
+                ? Arrays.stream(w.getEvents().split(",")).map(String::trim).filter(s -> !s.isBlank()).toList()
+                : List.of();
         return WebhookResponse.builder()
                 .id(w.getId())
                 .tenantId(w.getTenant().getId())
                 .name(w.getName())
                 .url(w.getUrl())
-                .events(w.getEvents())
+                .events(eventList)
                 .isActive(w.getIsActive())
                 .createdAt(w.getCreatedAt())
                 .build();

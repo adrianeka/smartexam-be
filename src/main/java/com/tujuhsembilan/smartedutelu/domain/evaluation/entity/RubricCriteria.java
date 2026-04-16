@@ -12,6 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"rubric"})
 @Entity
 @Table(name = "rubric_criteria")
 public class RubricCriteria {

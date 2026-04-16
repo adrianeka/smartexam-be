@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.scheduling.entity;
 import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -41,7 +42,7 @@ public class ExamRegistration {
     @Builder.Default
     private String status = "registered";
 
+    @CreationTimestamp
     @Column(name = "registered_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime registeredAt = OffsetDateTime.now();
+    private OffsetDateTime registeredAt;
 }

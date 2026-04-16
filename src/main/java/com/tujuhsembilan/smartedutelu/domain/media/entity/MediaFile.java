@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.media.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -13,6 +14,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"owner"})
 @Entity
 @Table(name = "media_files")
 public class MediaFile {
@@ -44,7 +46,7 @@ public class MediaFile {
     @Column(name = "context_id")
     private UUID contextId;
 
+    @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime uploadedAt = OffsetDateTime.now();
+    private OffsetDateTime uploadedAt;
 }

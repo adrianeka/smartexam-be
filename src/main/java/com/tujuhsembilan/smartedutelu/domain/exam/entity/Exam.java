@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.exam.entity;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import com.tujuhsembilan.smartedutelu.domain.tenant.entity.Tenant;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"tenant", "category", "createdBy", "sections"})
 @Entity
 @Table(name = "exams", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"tenant_id", "slug"})
@@ -108,13 +110,13 @@ public class Exam {
     @JoinColumn(name = "created_by", nullable = false, updatable = false)
     private User createdBy;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 
+    @CreationTimestamp
     @Column(name = "updated_at", nullable = false)
-    @Builder.Default
-    private OffsetDateTime updatedAt = OffsetDateTime.now();
+    private OffsetDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;

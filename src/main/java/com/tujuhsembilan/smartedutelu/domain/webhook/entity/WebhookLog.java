@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.webhook.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -37,7 +38,7 @@ public class WebhookLog {
     @Column(name = "response_body", columnDefinition = "TEXT")
     private String responseBody;
 
+    @CreationTimestamp
     @Column(name = "sent_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime sentAt = OffsetDateTime.now();
+    private OffsetDateTime sentAt;
 }

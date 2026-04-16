@@ -3,9 +3,9 @@ package com.tujuhsembilan.smartedutelu.domain.media.service;
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
 import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
+import com.tujuhsembilan.smartedutelu.common.security.CurrentUserProvider;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
-import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRepository;
 import com.tujuhsembilan.smartedutelu.domain.media.dto.request.CreateMediaRequest;
 import com.tujuhsembilan.smartedutelu.domain.media.dto.response.MediaResponse;
 import com.tujuhsembilan.smartedutelu.domain.media.entity.MediaFile;
@@ -36,7 +36,7 @@ import java.util.UUID;
 public class MediaService {
 
     private final MediaFileRepository mediaFileRepository;
-    private final UserRepository userRepository;
+    private final CurrentUserProvider currentUserProvider;
     private final S3Client s3Client;
 
     @Value("${application.minio.bucket}")
@@ -68,7 +68,7 @@ public class MediaService {
     public Page<MediaResponse> listByOwner(UUID ownerId, Pageable pageable) {
         UUID effectiveOwnerId = ownerId;
         if (!SecurityUtils.hasCurrentRole("ADMIN")) {
-            User currentUser = resolveCurrentUser();
+            User currentUser = currentUserProvider.getCurrentUser();
             effectiveOwnerId = currentUser.getId();
         }
         return mediaFileRepository.findByOwnerId(effectiveOwnerId, pageable).map(MediaResponse::from);
@@ -76,7 +76,7 @@ public class MediaService {
 
     @Transactional(readOnly = true)
     public Page<MediaResponse> listRecentByCurrentUser(Pageable pageable) {
-        User user = resolveCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
         return mediaFileRepository.findByOwnerIdOrderByUploadedAtDesc(user.getId(), pageable)
                 .map(MediaResponse::from);
     }
@@ -110,7 +110,7 @@ public class MediaService {
         // H1: Validate magic bytes to prevent content-type spoofing
         validateMagicBytes(file, contentType);
 
-        User currentUser = resolveCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         String extension = getExtension(file.getOriginalFilename());
         String key = "media/" + UUID.randomUUID() + extension;
@@ -145,7 +145,7 @@ public class MediaService {
 
     @Transactional
     public MediaResponse registerMedia(CreateMediaRequest request) {
-        User currentUser = resolveCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         // H6: Validate filePath to prevent path traversal
         String filePath = request.getFilePath();
@@ -216,10 +216,4 @@ public class MediaService {
         }
     }
 
-    private User resolveCurrentUser() {
-        String email = SecurityUtils.getCurrentUsername()
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
-    }
 }

@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.scheduling.entity;
 import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -41,9 +42,9 @@ public class ExamSession {
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
 
+    @CreationTimestamp
     @Column(name = "start_time", nullable = false)
-    @Builder.Default
-    private OffsetDateTime startTime = OffsetDateTime.now();
+    private OffsetDateTime startTime;
 
     @Column(name = "end_time")
     private OffsetDateTime endTime;

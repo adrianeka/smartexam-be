@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.webhook.service;
 
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
+import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantRepository;
 import com.tujuhsembilan.smartedutelu.domain.webhook.dto.request.CreateWebhookRequest;
@@ -17,6 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -42,13 +46,20 @@ public class WebhookService {
 
     @Transactional
     public WebhookResponse createWebhook(CreateWebhookRequest request) {
+        validateUrl(request.getUrl());
+        validateEvents(request.getEvents());
+
+        String secret = (request.getSecret() != null && !request.getSecret().isBlank())
+                ? request.getSecret()
+                : UUID.randomUUID().toString().replace("-", "");
+
         Webhook webhook = Webhook.builder()
                 .tenant(tenantRepository.findById(request.getTenantId())
                         .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_TNT_001)))
                 .name(request.getName())
                 .url(request.getUrl())
-                .secret(request.getSecret())
-                .events(request.getEvents())
+                .secret(secret)
+                .events(String.join(",", request.getEvents()))
                 .build();
 
         return WebhookResponse.from(webhookRepository.save(webhook));
@@ -60,9 +71,15 @@ public class WebhookService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_WHK_001));
 
         if (request.getName() != null) webhook.setName(request.getName());
-        if (request.getUrl() != null) webhook.setUrl(request.getUrl());
+        if (request.getUrl() != null) {
+            validateUrl(request.getUrl());
+            webhook.setUrl(request.getUrl());
+        }
         if (request.getSecret() != null) webhook.setSecret(request.getSecret());
-        if (request.getEvents() != null) webhook.setEvents(request.getEvents());
+        if (request.getEvents() != null) {
+            validateEvents(request.getEvents());
+            webhook.setEvents(String.join(",", request.getEvents()));
+        }
         if (request.getIsActive() != null) webhook.setIsActive(request.getIsActive());
 
         return WebhookResponse.from(webhookRepository.save(webhook));
@@ -79,4 +96,51 @@ public class WebhookService {
     public Page<WebhookLogResponse> listLogs(UUID webhookId, Pageable pageable) {
         return webhookLogRepository.findByWebhookId(webhookId, pageable).map(WebhookLogResponse::from);
     }
+
+    // ── private helpers ───────────────────────────────────────────────────────
+
+    /**
+     * Validasi URL webhook: harus HTTPS dan tidak boleh mengarah ke IP private/loopback.
+     */
+    private void validateUrl(String rawUrl) {
+        try {
+            URI uri = URI.create(rawUrl);
+            if (!"https".equalsIgnoreCase(uri.getScheme())) {
+                throw new BusinessException(ErrorCode.SE_WHK_001,
+                        "URL webhook harus menggunakan HTTPS");
+            }
+            String host = uri.getHost();
+            if (host == null || host.isBlank()) {
+                throw new BusinessException(ErrorCode.SE_WHK_001, "URL webhook tidak valid");
+            }
+            InetAddress addr = InetAddress.getByName(host);
+            if (addr.isLoopbackAddress() || addr.isSiteLocalAddress()
+                    || addr.isLinkLocalAddress() || addr.isAnyLocalAddress()) {
+                throw new BusinessException(ErrorCode.SE_WHK_001,
+                        "URL webhook tidak boleh mengarah ke alamat IP private atau loopback");
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new BusinessException(ErrorCode.SE_WHK_001,
+                    "URL webhook tidak valid: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Pastikan daftar event tidak kosong dan setiap nilai dikenal.
+     */
+    private void validateEvents(List<String> events) {
+        if (events == null || events.isEmpty()) {
+            throw new BusinessException(ErrorCode.SE_WHK_001, "Daftar event tidak boleh kosong");
+        }
+        for (String e : events) {
+            try {
+                com.tujuhsembilan.smartedutelu.domain.webhook.enums.WebhookEvent.fromValue(e);
+            } catch (IllegalArgumentException ex) {
+                throw new BusinessException(ErrorCode.SE_WHK_001, "Event tidak dikenal: " + e);
+            }
+        }
+    }
 }
+

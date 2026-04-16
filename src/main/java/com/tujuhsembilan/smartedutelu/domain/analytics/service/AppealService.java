@@ -39,7 +39,7 @@ public class AppealService {
             AppealStatus appealStatus = AppealStatus.fromString(status);
             return appealRepository.findByStatus(appealStatus, pageable).map(AppealResponse::from);
         }
-        return appealRepository.findAll(pageable).map(AppealResponse::from);
+        return appealRepository.findAllWithRelations(pageable).map(AppealResponse::from);
     }
 
     @Transactional
@@ -63,7 +63,7 @@ public class AppealService {
                 .build();
 
         ExamAppeal saved = appealRepository.save(appeal);
-        log.info("Appeal created: {} for result: {}", saved.getId(), result.getId());
+        log.info("Appeal created: {} for result: {} by {}", saved.getId(), result.getId(), user.getEmail());
         return AppealResponse.from(saved);
     }
 
@@ -88,7 +88,7 @@ public class AppealService {
         appeal.setResolvedAt(OffsetDateTime.now());
 
         appealRepository.save(appeal);
-        log.info("Appeal {} resolved with status: {}", appealId, request.getStatus());
+        log.info("Appeal {} resolved with status: {} by {}", appealId, request.getStatus(), resolver.getEmail());
         return AppealResponse.from(appeal);
     }
 }

@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.support.entity;
 import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"user", "exam", "category", "priority", "status", "assignedTo", "messages"})
 @Entity
 @Table(name = "tickets")
 public class Ticket {
@@ -61,13 +63,13 @@ public class Ticket {
     @JoinColumn(name = "assigned_to")
     private User assignedTo;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 
+    @CreationTimestamp
     @Column(name = "updated_at", nullable = false)
-    @Builder.Default
-    private OffsetDateTime updatedAt = OffsetDateTime.now();
+    private OffsetDateTime updatedAt;
 
     @Column(name = "closed_at")
     private OffsetDateTime closedAt;

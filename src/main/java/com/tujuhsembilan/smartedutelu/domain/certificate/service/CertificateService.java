@@ -4,6 +4,7 @@ import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
 import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.DuplicateResourceException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
+import com.tujuhsembilan.smartedutelu.common.security.CurrentUserProvider;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.certificate.dto.request.IssueCertificateRequest;
 import com.tujuhsembilan.smartedutelu.domain.certificate.dto.response.CertificateResponse;
@@ -17,6 +18,8 @@ import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import com.tujuhsembilan.smartedutelu.domain.exam.repository.ExamRepository;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRepository;
+import com.tujuhsembilan.smartedutelu.domain.webhook.enums.WebhookEvent;
+import com.tujuhsembilan.smartedutelu.domain.webhook.service.WebhookDispatcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,11 +43,13 @@ public class CertificateService {
     private final UserRepository userRepository;
     private final ExamRepository examRepository;
     private final ExamResultRepository resultRepository;
+    private final WebhookDispatcher webhookDispatcher;
+    private final CurrentUserProvider currentUserProvider;
 
     @Transactional(readOnly = true)
     public Page<CertificateResponse> listCertificates(UUID userId, UUID examId, Pageable pageable) {
         if (SecurityUtils.hasCurrentRole("STUDENT")) {
-            User currentUser = resolveCurrentUser();
+            User currentUser = currentUserProvider.getCurrentUser();
             return certificateRepository.findByUserId(currentUser.getId(), pageable).map(CertificateResponse::from);
         }
         if (userId != null) {
@@ -62,7 +67,7 @@ public class CertificateService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_CRT_002));
 
         if (SecurityUtils.hasCurrentRole("STUDENT")) {
-            User currentUser = resolveCurrentUser();
+            User currentUser = currentUserProvider.getCurrentUser();
             if (!cert.getUser().getId().equals(currentUser.getId())) {
                 throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses ke sertifikat ini");
             }
@@ -113,6 +118,16 @@ public class CertificateService {
 
         Certificate saved = certificateRepository.save(certificate);
         log.info("Certificate issued: {} (number: {}) for user: {} exam: {}", saved.getId(), certNumber, user.getId(), exam.getId());
+
+        // Kirim webhook event certificate.issued secara async
+        Map<String, Object> payload = Map.of(
+                "certificateId", saved.getId().toString(),
+                "certificateNumber", certNumber,
+                "userId", user.getId().toString(),
+                "examId", exam.getId().toString()
+        );
+        webhookDispatcher.dispatch(exam.getTenant().getId(), WebhookEvent.CERTIFICATE_ISSUED, payload);
+
         return CertificateResponse.from(saved);
     }
 
@@ -127,13 +142,6 @@ public class CertificateService {
             }
         }
         throw new BusinessException(ErrorCode.SE_CRT_003, "Gagal generate nomor sertifikat unik setelah beberapa percobaan");
-    }
-
-    private User resolveCurrentUser() {
-        String email = SecurityUtils.getCurrentUsername()
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
     }
 
     private Map<String, Object> sanitizeMap(Map<String, Object> input) {

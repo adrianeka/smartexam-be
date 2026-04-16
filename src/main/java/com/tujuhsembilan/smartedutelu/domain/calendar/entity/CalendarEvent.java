@@ -4,6 +4,7 @@ import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import com.tujuhsembilan.smartedutelu.domain.tenant.entity.Tenant;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"tenant", "user", "exam"})
 @Entity
 @Table(name = "calendar_events")
 public class CalendarEvent {
@@ -59,7 +61,7 @@ public class CalendarEvent {
     @Builder.Default
     private String repeatType = "none";
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 }

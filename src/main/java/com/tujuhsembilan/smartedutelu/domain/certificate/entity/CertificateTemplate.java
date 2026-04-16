@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.certificate.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"createdBy"})
 @Entity
 @Table(name = "certificate_templates")
 public class CertificateTemplate {
@@ -50,7 +52,7 @@ public class CertificateTemplate {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 }

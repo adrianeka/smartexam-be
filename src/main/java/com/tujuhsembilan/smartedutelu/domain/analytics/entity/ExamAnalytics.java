@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.analytics.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -47,7 +48,7 @@ public class ExamAnalytics {
     @Column(name = "discrimination_index", precision = 5, scale = 4)
     private BigDecimal discriminationIndex;
 
+    @CreationTimestamp
     @Column(name = "calculated_at", nullable = false)
-    @Builder.Default
-    private OffsetDateTime calculatedAt = OffsetDateTime.now();
+    private OffsetDateTime calculatedAt;
 }

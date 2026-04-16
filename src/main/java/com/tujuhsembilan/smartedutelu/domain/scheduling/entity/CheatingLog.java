@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.scheduling.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -38,7 +39,7 @@ public class CheatingLog {
     @Column(name = "screenshot_url", columnDefinition = "TEXT")
     private String screenshotUrl;
 
+    @CreationTimestamp
     @Column(name = "event_time", nullable = false)
-    @Builder.Default
-    private OffsetDateTime eventTime = OffsetDateTime.now();
+    private OffsetDateTime eventTime;
 }

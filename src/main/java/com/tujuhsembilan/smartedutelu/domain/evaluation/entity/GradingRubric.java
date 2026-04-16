@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.evaluation.entity;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import com.tujuhsembilan.smartedutelu.domain.question.entity.Question;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"question", "createdBy", "criteria"})
 @Entity
 @Table(name = "grading_rubrics")
 public class GradingRubric {
@@ -43,9 +45,9 @@ public class GradingRubric {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 
     @OneToMany(mappedBy = "rubric", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC")

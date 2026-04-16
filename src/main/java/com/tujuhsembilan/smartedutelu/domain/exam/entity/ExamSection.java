@@ -13,6 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"exam", "examQuestions"})
 @Entity
 @Table(name = "exam_sections")
 public class ExamSection {

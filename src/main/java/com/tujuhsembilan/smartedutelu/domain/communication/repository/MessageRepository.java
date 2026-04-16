@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public interface MessageRepository extends JpaRepository<Message, UUID> {
 
-    @Query("SELECT m FROM Message m WHERE m.sender.id = :userId OR m.receiver.id = :userId ORDER BY m.sentAt DESC")
+    @Query("SELECT m FROM Message m LEFT JOIN FETCH m.sender LEFT JOIN FETCH m.receiver WHERE m.sender.id = :userId OR m.receiver.id = :userId ORDER BY m.sentAt DESC")
     Page<Message> findByUserId(@Param("userId") UUID userId, Pageable pageable);
 
     @Query("SELECT m FROM Message m LEFT JOIN FETCH m.attachments WHERE m.id = :id")

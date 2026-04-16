@@ -4,6 +4,7 @@ import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import com.tujuhsembilan.smartedutelu.domain.scheduling.entity.ExamSession;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -62,9 +63,9 @@ public class ExamAttempt {
     @Column(name = "device_info", columnDefinition = "TEXT")
     private String deviceInfo;
 
+    @CreationTimestamp
     @Column(name = "started_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime startedAt = OffsetDateTime.now();
+    private OffsetDateTime startedAt;
 
     @Column(name = "submitted_at")
     private OffsetDateTime submittedAt;

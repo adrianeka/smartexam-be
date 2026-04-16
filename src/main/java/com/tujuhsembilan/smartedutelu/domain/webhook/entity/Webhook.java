@@ -1,8 +1,10 @@
 package com.tujuhsembilan.smartedutelu.domain.webhook.entity;
 
+import com.tujuhsembilan.smartedutelu.common.config.EncryptedStringConverter;
 import com.tujuhsembilan.smartedutelu.domain.tenant.entity.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -13,6 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = "tenant")
 @Entity
 @Table(name = "webhooks")
 public class Webhook {
@@ -32,7 +35,9 @@ public class Webhook {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String url;
 
-    @Column(length = 255)
+    /** Secret disimpan terenkripsi (AES-256-GCM). */
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(length = 512)
     private String secret;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -42,7 +47,7 @@ public class Webhook {
     @Builder.Default
     private Boolean isActive = true;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 }

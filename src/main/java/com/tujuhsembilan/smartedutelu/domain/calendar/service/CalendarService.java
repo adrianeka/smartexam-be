@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.calendar.service;
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
 import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
+import com.tujuhsembilan.smartedutelu.common.security.CurrentUserProvider;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.calendar.dto.request.CreateEventRequest;
 import com.tujuhsembilan.smartedutelu.domain.calendar.dto.request.UpdateEventRequest;
@@ -11,7 +12,6 @@ import com.tujuhsembilan.smartedutelu.domain.calendar.entity.CalendarEvent;
 import com.tujuhsembilan.smartedutelu.domain.calendar.repository.CalendarEventRepository;
 import com.tujuhsembilan.smartedutelu.domain.exam.repository.ExamRepository;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
-import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRepository;
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantRepository;
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class CalendarService {
     private final TenantRepository tenantRepository;
     private final TenantUserRepository tenantUserRepository;
     private final ExamRepository examRepository;
-    private final UserRepository userRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     @Transactional(readOnly = true)
     public Page<EventResponse> listByTenant(UUID tenantId, Pageable pageable) {
@@ -54,7 +54,7 @@ public class CalendarService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_CAL_001));
 
         if (!SecurityUtils.hasCurrentRole("ADMIN")) {
-            User currentUser = resolveCurrentUser();
+            User currentUser = currentUserProvider.getCurrentUser();
             boolean isOwner = event.getUser() != null && event.getUser().getId().equals(currentUser.getId());
             boolean isTenantMember = tenantUserRepository.existsByTenantIdAndUserId(
                     event.getTenant().getId(), currentUser.getId());
@@ -68,7 +68,7 @@ public class CalendarService {
 
     @Transactional
     public EventResponse createEvent(CreateEventRequest request) {
-        User currentUser = resolveCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         // H4: Validate dates
         validateEventDates(request.getStartDate(), request.getEndDate());
@@ -120,13 +120,6 @@ public class CalendarService {
         CalendarEvent event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_CAL_001));
         eventRepository.delete(event);
-    }
-
-    private User resolveCurrentUser() {
-        String email = SecurityUtils.getCurrentUsername()
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
     }
 
     private void validateEventDates(OffsetDateTime startDate, OffsetDateTime endDate) {

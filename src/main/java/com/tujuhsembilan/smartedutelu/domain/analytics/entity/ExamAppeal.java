@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.analytics.entity;
 import com.tujuhsembilan.smartedutelu.domain.analytics.enums.AppealStatus;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"result", "user", "resolvedBy"})
 @Entity
 @Table(name = "exam_appeals")
 public class ExamAppeal {
@@ -46,9 +48,9 @@ public class ExamAppeal {
     @JoinColumn(name = "resolved_by")
     private User resolvedBy;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 
     @Column(name = "resolved_at")
     private OffsetDateTime resolvedAt;

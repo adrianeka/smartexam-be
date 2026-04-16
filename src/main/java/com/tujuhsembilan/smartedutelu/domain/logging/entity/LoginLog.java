@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.logging.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -35,9 +36,9 @@ public class LoginLog {
     @Column(length = 255)
     private String device;
 
+    @CreationTimestamp
     @Column(name = "login_at", nullable = false)
-    @Builder.Default
-    private OffsetDateTime loginAt = OffsetDateTime.now();
+    private OffsetDateTime loginAt;
 
     @Column(name = "logout_at")
     private OffsetDateTime logoutAt;

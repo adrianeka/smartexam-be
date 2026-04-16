@@ -13,6 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"section", "question"})
 @Entity
 @Table(name = "exam_questions", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"section_id", "question_id"})

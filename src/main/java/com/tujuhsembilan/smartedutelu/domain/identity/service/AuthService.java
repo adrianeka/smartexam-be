@@ -150,7 +150,7 @@ public class AuthService {
     @Transactional
     public void logout(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         // Delete all active sessions for this user
         List<UserSession> sessions = userSessionRepository
@@ -194,7 +194,7 @@ public class AuthService {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         User user = userRepository.findByEmailWithRoles(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         String newAccessToken = jwtUtil.generateToken(Map.of(), userDetails);
         String newRefreshToken = jwtUtil.generateRefreshToken(userDetails, sessionId);
@@ -258,7 +258,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public UserResponse getProfile(String email) {
         User user = userRepository.findByEmailWithRoles(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         List<String> roles = user.getUserRoles().stream()
                 .map(ur -> ur.getRole().getName())
@@ -270,7 +270,7 @@ public class AuthService {
     @Transactional
     public UserResponse updateProfile(String email, UpdateProfileRequest request) {
         User user = userRepository.findByEmailWithRoles(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         if (request.getName() != null) user.setName(request.getName());
         if (request.getPhone() != null) user.setPhone(request.getPhone());
@@ -290,7 +290,7 @@ public class AuthService {
     @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
             throw new BusinessException(ErrorCode.SE_AUT_006, "Password saat ini tidak sesuai");
@@ -305,7 +305,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public List<SessionResponse> getSessions(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         return userSessionRepository
                 .findByUserIdAndExpiredAtAfterOrderByLastActiveDesc(user.getId(), LocalDateTime.now())
@@ -317,10 +317,10 @@ public class AuthService {
     @Transactional
     public void revokeSession(String email, UUID sessionId) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         UserSession session = userSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Session", sessionId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_AUT_002, "Sesi tidak ditemukan"));
 
         if (!session.getUser().getId().equals(user.getId())) {
             throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses ke session ini");

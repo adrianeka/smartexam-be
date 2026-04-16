@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.communication.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -42,9 +43,9 @@ public class Message {
     @Builder.Default
     private Boolean isRead = false;
 
+    @CreationTimestamp
     @Column(name = "sent_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime sentAt = OffsetDateTime.now();
+    private OffsetDateTime sentAt;
 
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

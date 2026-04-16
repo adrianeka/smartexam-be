@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.certificate.entity;
 import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"user", "exam", "template"})
 @Entity
 @Table(name = "certificates", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"user_id", "exam_id"})
@@ -53,7 +55,7 @@ public class Certificate {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> metadata;
 
+    @CreationTimestamp
     @Column(name = "issued_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime issuedAt = OffsetDateTime.now();
+    private OffsetDateTime issuedAt;
 }

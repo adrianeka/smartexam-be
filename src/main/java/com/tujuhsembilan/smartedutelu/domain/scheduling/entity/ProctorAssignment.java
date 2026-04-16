@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.scheduling.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -36,7 +37,7 @@ public class ProctorAssignment {
     @Builder.Default
     private String role = "observer";
 
+    @CreationTimestamp
     @Column(name = "assigned_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime assignedAt = OffsetDateTime.now();
+    private OffsetDateTime assignedAt;
 }

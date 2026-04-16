@@ -16,6 +16,7 @@ import com.tujuhsembilan.smartedutelu.domain.identity.entity.UserRole;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.RoleRepository;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRepository;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserSpecification;
+import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -54,7 +55,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserById(UUID id) {
         User user = userRepository.findByIdWithRoles(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
         return toUserResponse(user);
     }
 
@@ -87,7 +88,7 @@ public class UserService {
     @Transactional
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = userRepository.findByIdWithRoles(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         if (request.getName() != null) user.setName(request.getName());
         if (request.getPhone() != null) user.setPhone(request.getPhone());
@@ -96,35 +97,35 @@ public class UserService {
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone());
 
         user = userRepository.save(user);
-        log.info("User diupdate oleh admin: {}", user.getId());
+        log.info("User diupdate oleh admin {} ({}): {}", SecurityUtils.getCurrentUsername().orElse("system"), user.getId(), user.getEmail());
         return toUserResponse(user);
     }
 
     @Transactional
     public void deleteUser(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         user.setDeletedAt(LocalDateTime.now());
         userRepository.save(user);
-        log.info("User dihapus (soft delete): {}", id);
+        log.info("User dihapus (soft delete) oleh {}: {}", SecurityUtils.getCurrentUsername().orElse("system"), id);
     }
 
     @Transactional
     public UserResponse updateStatus(UUID id, UpdateStatusRequest request) {
         User user = userRepository.findByIdWithRoles(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         user.setStatus(request.getStatus());
         user = userRepository.save(user);
-        log.info("Status user {} diubah ke: {}", id, request.getStatus());
+        log.info("Status user {} diubah ke {} oleh {}", id, request.getStatus(), SecurityUtils.getCurrentUsername().orElse("system"));
         return toUserResponse(user);
     }
 
     @Transactional(readOnly = true)
     public List<String> getUserRoles(UUID userId) {
         User user = userRepository.findByIdWithRoles(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         return user.getUserRoles().stream()
                 .map(ur -> ur.getRole().getName())
@@ -134,7 +135,7 @@ public class UserService {
     @Transactional
     public UserResponse assignRoles(UUID userId, AssignRolesRequest request) {
         User user = userRepository.findByIdWithRoles(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
         // B8: Deduplicate role IDs to prevent duplicate assignment
         List<UUID> uniqueRoleIds = new LinkedHashSet<>(request.getRoleIds()).stream().toList();

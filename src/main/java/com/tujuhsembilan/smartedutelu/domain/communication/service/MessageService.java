@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.communication.service;
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
 import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
+import com.tujuhsembilan.smartedutelu.common.security.CurrentUserProvider;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.communication.dto.request.SendMessageRequest;
 import com.tujuhsembilan.smartedutelu.domain.communication.dto.response.MessageResponse;
@@ -26,10 +27,11 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     @Transactional(readOnly = true)
     public Page<MessageResponse> listMyMessages(Pageable pageable) {
-        User user = resolveCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
         return messageRepository.findByUserId(user.getId(), pageable).map(MessageResponse::from);
     }
 
@@ -38,7 +40,7 @@ public class MessageService {
         Message msg = messageRepository.findByIdWithAttachments(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_COM_003));
 
-        User currentUser = resolveCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
         if (!msg.getSender().getId().equals(currentUser.getId())
                 && !msg.getReceiver().getId().equals(currentUser.getId())) {
             throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses ke pesan ini");
@@ -49,7 +51,7 @@ public class MessageService {
 
     @Transactional
     public MessageResponse send(SendMessageRequest request) {
-        User sender = resolveCurrentUser();
+        User sender = currentUserProvider.getCurrentUser();
         User receiver = userRepository.findById(request.getReceiverId())
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
@@ -70,7 +72,7 @@ public class MessageService {
         Message msg = messageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_COM_003));
 
-        User currentUser = resolveCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
         if (!msg.getReceiver().getId().equals(currentUser.getId())) {
             throw new BusinessException(ErrorCode.SE_CMN_004, "Anda hanya bisa menandai pesan yang ditujukan kepada Anda");
         }
@@ -79,10 +81,4 @@ public class MessageService {
         return MessageResponse.from(messageRepository.save(msg));
     }
 
-    private User resolveCurrentUser() {
-        String email = SecurityUtils.getCurrentUsername()
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
-    }
 }

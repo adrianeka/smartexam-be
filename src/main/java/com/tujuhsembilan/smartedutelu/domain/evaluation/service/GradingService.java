@@ -14,6 +14,8 @@ import com.tujuhsembilan.smartedutelu.domain.evaluation.repository.ExamAttemptRe
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRepository;
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantUserRepository;
+import com.tujuhsembilan.smartedutelu.domain.webhook.enums.WebhookEvent;
+import com.tujuhsembilan.smartedutelu.domain.webhook.service.WebhookDispatcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,6 +36,7 @@ public class GradingService {
     private final ExamAttemptAnswerRepository answerRepository;
     private final UserRepository userRepository;
     private final TenantUserRepository tenantUserRepository;
+    private final WebhookDispatcher webhookDispatcher;
 
     @Transactional(readOnly = true)
     public Page<AttemptResponse> listPendingGrading(Pageable pageable) {
@@ -96,6 +100,17 @@ public class GradingService {
 
         attemptRepository.save(attempt);
         log.info("Attempt {} finalized with score {}", attemptId, totalScore);
+
+        // Kirim webhook event exam.graded secara async
+        Map<String, Object> payload = Map.of(
+                "attemptId", attempt.getId().toString(),
+                "examId", attempt.getExam().getId().toString(),
+                "studentId", attempt.getStudent().getId().toString(),
+                "score", totalScore,
+                "passed", Boolean.TRUE.equals(attempt.getPassed())
+        );
+        webhookDispatcher.dispatch(attempt.getExam().getTenant().getId(), WebhookEvent.EXAM_GRADED, payload);
+
         return AttemptResponse.fromWithAnswers(attempt);
     }
 

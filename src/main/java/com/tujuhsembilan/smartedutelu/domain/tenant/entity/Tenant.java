@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.tenant.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -34,7 +35,7 @@ public class Tenant {
     @Builder.Default
     private String status = "active";
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 }

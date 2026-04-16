@@ -3,6 +3,7 @@ package com.tujuhsembilan.smartedutelu.domain.communication.service;
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
 import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
+import com.tujuhsembilan.smartedutelu.common.security.CurrentUserProvider;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.communication.dto.request.UpdateChannelRequest;
 import com.tujuhsembilan.smartedutelu.domain.communication.dto.response.ChannelResponse;
@@ -12,7 +13,6 @@ import com.tujuhsembilan.smartedutelu.domain.communication.entity.NotificationCh
 import com.tujuhsembilan.smartedutelu.domain.communication.repository.NotificationChannelRepository;
 import com.tujuhsembilan.smartedutelu.domain.communication.repository.NotificationRepository;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
-import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,18 +30,18 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationChannelRepository channelRepository;
-    private final UserRepository userRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     @Transactional(readOnly = true)
     public Page<NotificationResponse> listByCurrentUser(Pageable pageable) {
-        User user = resolveCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable)
                 .map(NotificationResponse::from);
     }
 
     @Transactional(readOnly = true)
     public long countUnread() {
-        User user = resolveCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
         return notificationRepository.countByUserIdAndIsReadFalse(user.getId());
     }
 
@@ -50,7 +50,7 @@ public class NotificationService {
         Notification notif = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_COM_002));
 
-        User currentUser = resolveCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
         if (!notif.getUser().getId().equals(currentUser.getId())) {
             throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses ke notifikasi ini");
         }
@@ -61,20 +61,20 @@ public class NotificationService {
 
     @Transactional
     public int markAllAsRead() {
-        User user = resolveCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
         return notificationRepository.markAllAsRead(user.getId());
     }
 
     @Transactional(readOnly = true)
     public List<ChannelResponse> getChannels() {
-        User user = resolveCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
         return channelRepository.findByUserId(user.getId()).stream()
                 .map(ChannelResponse::from).toList();
     }
 
     @Transactional
     public ChannelResponse updateChannel(UpdateChannelRequest request) {
-        User user = resolveCurrentUser();
+        User user = currentUserProvider.getCurrentUser();
         NotificationChannel channel = channelRepository
                 .findByUserIdAndChannel(user.getId(), request.getChannel())
                 .orElse(NotificationChannel.builder().user(user).channel(request.getChannel()).build());
@@ -85,10 +85,4 @@ public class NotificationService {
         return ChannelResponse.from(channelRepository.save(channel));
     }
 
-    private User resolveCurrentUser() {
-        String email = SecurityUtils.getCurrentUsername()
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
-    }
 }

@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.evaluation.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.question.entity.Question;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"attempt", "question"})
 @Entity
 @Table(name = "exam_attempt_answers", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"attempt_id", "question_id"})
@@ -46,7 +48,7 @@ public class ExamAttemptAnswer {
     @Builder.Default
     private Integer timeSpentSeconds = 0;
 
+    @CreationTimestamp
     @Column(name = "answered_at")
-    @Builder.Default
-    private OffsetDateTime answeredAt = OffsetDateTime.now();
+    private OffsetDateTime answeredAt;
 }

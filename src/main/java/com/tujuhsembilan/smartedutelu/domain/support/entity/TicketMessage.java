@@ -2,6 +2,7 @@ package com.tujuhsembilan.smartedutelu.domain.support.entity;
 
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -13,6 +14,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"ticket", "user"})
 @Entity
 @Table(name = "ticket_messages")
 public class TicketMessage {
@@ -36,7 +38,7 @@ public class TicketMessage {
     @Column(name = "attachment_url", columnDefinition = "TEXT")
     private String attachmentUrl;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private OffsetDateTime createdAt;
 }
