@@ -28,6 +28,16 @@ public enum ErrorCode {
     SE_AUT_005("SE-AUT-005", "Password reset token invalid or expired"),
     SE_AUT_006("SE-AUT-006", "Current password is incorrect"),
 
+    // User Management Errors (SE-USR-xxx)
+    SE_USR_001("SE-USR-001", "User not found"),
+    SE_USR_002("SE-USR-002", "Cannot delete own account"),
+    SE_USR_003("SE-USR-003", "Cannot change own status"),
+
+    // Role & Permission Errors (SE-ROL-xxx / SE-PRM-xxx)
+    SE_ROL_001("SE-ROL-001", "Role not found"),
+    SE_ROL_002("SE-ROL-002", "Role name already exists"),
+    SE_PRM_001("SE-PRM-001", "One or more permissions not found"),
+
     // Organization / Tenant Errors (SE-ORG-xxx)
     SE_ORG_001("SE-ORG-001", "Organization not found"),
 

@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,17 +14,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserResponse {
+public class RoleResponse {
 
     private UUID id;
     private String name;
-    private String email;
-    private String phone;
-    private String picture;
-    private String locale;
-    private String timezone;
-    private String status;
-    private List<String> roles;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String description;
+    private List<PermissionResponse> permissions;
 }
