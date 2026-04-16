@@ -64,7 +64,13 @@ public enum ErrorCode {
 
     // Exam Management Errors (SE-EXM-xxx)
     SE_EXM_001("SE-EXM-001", "Exam not found"),
-    SE_EXM_002("SE-EXM-002", "Exam is currently active and cannot be modified");
+    SE_EXM_002("SE-EXM-002", "Exam is currently active and cannot be modified"),
+    SE_EXM_003("SE-EXM-003", "Exam slug already exists in this tenant"),
+    SE_EXM_004("SE-EXM-004", "Exam section not found"),
+    SE_EXM_005("SE-EXM-005", "Exam question not found"),
+    SE_EXM_006("SE-EXM-006", "Question already exists in this section"),
+    SE_EXM_007("SE-EXM-007", "Exam status transition not allowed"),
+    SE_EXM_008("SE-EXM-008", "Only draft exams can be modified");
 
     private final String code;
     private final String message;
