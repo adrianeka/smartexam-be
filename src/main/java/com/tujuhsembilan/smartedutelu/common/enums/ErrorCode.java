@@ -70,7 +70,24 @@ public enum ErrorCode {
     SE_EXM_005("SE-EXM-005", "Exam question not found"),
     SE_EXM_006("SE-EXM-006", "Question already exists in this section"),
     SE_EXM_007("SE-EXM-007", "Exam status transition not allowed"),
-    SE_EXM_008("SE-EXM-008", "Only draft exams can be modified");
+    SE_EXM_008("SE-EXM-008", "Only draft exams can be modified"),
+
+    // Scheduling & Proctoring Errors (SE-SCH-xxx)
+    SE_SCH_001("SE-SCH-001", "Schedule not found"),
+    SE_SCH_002("SE-SCH-002", "End time must be after start time"),
+    SE_SCH_003("SE-SCH-003", "Session not found"),
+    SE_SCH_004("SE-SCH-004", "Session already terminated"),
+    SE_SCH_005("SE-SCH-005", "Registration not found"),
+    SE_SCH_006("SE-SCH-006", "Already registered for this exam schedule"),
+
+    // Evaluation & Grading Errors (SE-GRD-xxx)
+    SE_GRD_001("SE-GRD-001", "Attempt not found"),
+    SE_GRD_002("SE-GRD-002", "Answer not found"),
+    SE_GRD_003("SE-GRD-003", "Attempt already finalized"),
+    SE_GRD_004("SE-GRD-004", "Rubric not found"),
+    SE_GRD_005("SE-GRD-005", "Rubric criteria not found"),
+    SE_GRD_006("SE-GRD-006", "Result not found"),
+    SE_GRD_007("SE-GRD-007", "Result already published");
 
     private final String code;
     private final String message;
