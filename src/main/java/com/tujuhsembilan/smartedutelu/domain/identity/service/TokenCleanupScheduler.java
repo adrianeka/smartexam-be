@@ -22,7 +22,7 @@ public class TokenCleanupScheduler {
     private final UserSessionRepository userSessionRepository;
     private final PasswordResetRepository passwordResetRepository;
 
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(fixedDelay = 3_600_000) // Setiap jam
     @Transactional
     public void cleanupExpiredData() {
         LocalDateTime now = LocalDateTime.now();

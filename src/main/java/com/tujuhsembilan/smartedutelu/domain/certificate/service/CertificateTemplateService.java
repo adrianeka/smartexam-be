@@ -59,6 +59,14 @@ public class CertificateTemplateService {
                 .createdBy(creator)
                 .build();
 
+        // J14: If this is set as default, unset all other defaults first
+        if (Boolean.TRUE.equals(template.getIsDefault())) {
+            templateRepository.findByIsDefaultTrue().ifPresent(existing -> {
+                existing.setIsDefault(false);
+                templateRepository.save(existing);
+            });
+        }
+
         CertificateTemplate saved = templateRepository.save(template);
         log.info("Certificate template created: {}", saved.getId());
         return TemplateResponse.from(saved);
@@ -77,7 +85,18 @@ public class CertificateTemplateService {
             template.setBackgroundUrl(request.getBackgroundUrl());
         }
         if (request.getFields() != null) template.setFields(sanitizeFields(request.getFields()));
-        if (request.getIsDefault() != null) template.setIsDefault(request.getIsDefault());
+        if (request.getIsDefault() != null) {
+            // J14: Enforce single default template
+            if (Boolean.TRUE.equals(request.getIsDefault())) {
+                templateRepository.findByIsDefaultTrue().ifPresent(existing -> {
+                    if (!existing.getId().equals(template.getId())) {
+                        existing.setIsDefault(false);
+                        templateRepository.save(existing);
+                    }
+                });
+            }
+            template.setIsDefault(request.getIsDefault());
+        }
 
         return TemplateResponse.from(templateRepository.save(template));
     }

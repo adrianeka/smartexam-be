@@ -1,6 +1,6 @@
 package com.tujuhsembilan.smartedutelu.domain.tag.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.tujuhsembilan.smartedutelu.domain.tag.enums.TaggableType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -12,8 +12,8 @@ public class AttachTagRequest {
     @NotNull
     private UUID tagId;
 
-    @NotBlank
-    private String taggableType;
+    @NotNull
+    private TaggableType taggableType;
 
     @NotNull
     private UUID taggableId;

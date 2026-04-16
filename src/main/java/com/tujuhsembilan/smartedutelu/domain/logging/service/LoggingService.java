@@ -103,8 +103,9 @@ public class LoggingService {
                 .action(action)
                 .entityType(entityType)
                 .entityId(entityId)
-                .oldData(oldData)
-                .newData(newData)
+                // I7: Sanitize PII/sensitive fields before storing
+                .oldData(sanitizeSensitiveFields(oldData))
+                .newData(sanitizeSensitiveFields(newData))
                 .build();
         if (userId != null) {
             auditLog.setUser(userRepository.getReferenceById(userId));
@@ -142,5 +143,23 @@ public class LoggingService {
                         com.tujuhsembilan.smartedutelu.common.enums.ErrorCode.SE_LOG_004));
         loginLog.setLogoutAt(java.time.OffsetDateTime.now());
         return LoginLogResponse.from(loginLogRepository.save(loginLog));
+    }
+
+    // I7: Remove PII/sensitive keys from maps before persisting
+    private static final java.util.Set<String> SENSITIVE_KEYS = java.util.Set.of(
+            "password", "passwordHash", "secret", "token", "refreshToken",
+            "accessToken", "creditCard", "cvv", "pin"
+    );
+
+    private Map<String, Object> sanitizeSensitiveFields(Map<String, Object> data) {
+        if (data == null) return null;
+        Map<String, Object> sanitized = new java.util.LinkedHashMap<>();
+        for (java.util.Map.Entry<String, Object> entry : data.entrySet()) {
+            String key = entry.getKey();
+            boolean isSensitive = SENSITIVE_KEYS.stream()
+                    .anyMatch(k -> key.toLowerCase().contains(k.toLowerCase()));
+            sanitized.put(key, isSensitive ? "[REDACTED]" : entry.getValue());
+        }
+        return sanitized;
     }
 }

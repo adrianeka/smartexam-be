@@ -36,7 +36,7 @@ public class MediaFile {
     private String fileType;
 
     @Column(name = "file_size")
-    private Integer fileSize;
+    private Long fileSize;
 
     @Column(length = 100)
     private String context;

@@ -24,8 +24,8 @@ public class RegisterRequest {
     @NotBlank(message = "Password wajib diisi")
     @Size(min = 8, message = "Password minimal 8 karakter")
     @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$",
-            message = "Password harus mengandung huruf besar, huruf kecil, dan angka"
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%!&*_\\-]).{8,}$",
+            message = "Password harus mengandung huruf besar, huruf kecil, angka, dan karakter khusus (@#$%!&*_-)"
     )
     private String password;
 

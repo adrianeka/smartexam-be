@@ -16,7 +16,7 @@ public class MediaResponse {
     private String fileName;
     private String filePath;
     private String fileType;
-    private Integer fileSize;
+    private Long fileSize;
     private String context;
     private UUID contextId;
     private OffsetDateTime uploadedAt;

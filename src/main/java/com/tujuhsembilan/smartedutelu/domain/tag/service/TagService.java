@@ -8,6 +8,7 @@ import com.tujuhsembilan.smartedutelu.domain.tag.dto.request.CreateTagRequest;
 import com.tujuhsembilan.smartedutelu.domain.tag.dto.response.TagResponse;
 import com.tujuhsembilan.smartedutelu.domain.tag.entity.Tag;
 import com.tujuhsembilan.smartedutelu.domain.tag.entity.Taggable;
+import com.tujuhsembilan.smartedutelu.domain.tag.enums.TaggableType;
 import com.tujuhsembilan.smartedutelu.domain.tag.repository.TagRepository;
 import com.tujuhsembilan.smartedutelu.domain.tag.repository.TaggableRepository;
 import lombok.RequiredArgsConstructor;
@@ -76,14 +77,14 @@ public class TagService {
     }
 
     @Transactional
-    public void detachTag(UUID tagId, String taggableType, UUID taggableId) {
+    public void detachTag(UUID tagId, TaggableType taggableType, UUID taggableId) {
         Taggable taggable = taggableRepository.findByTagIdAndTaggableTypeAndTaggableId(tagId, taggableType, taggableId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_TAG_001));
         taggableRepository.delete(taggable);
     }
 
     @Transactional(readOnly = true)
-    public List<TagResponse> getTagsForEntity(String taggableType, UUID taggableId) {
+    public List<TagResponse> getTagsForEntity(TaggableType taggableType, UUID taggableId) {
         return taggableRepository.findByTaggableTypeAndTaggableId(taggableType, taggableId)
                 .stream().map(t -> TagResponse.from(t.getTag())).toList();
     }

@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.support.service;
 
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
+import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.exam.repository.ExamRepository;
@@ -14,6 +15,7 @@ import com.tujuhsembilan.smartedutelu.domain.support.dto.response.TicketResponse
 import com.tujuhsembilan.smartedutelu.domain.support.entity.Ticket;
 import com.tujuhsembilan.smartedutelu.domain.support.entity.TicketMessage;
 import com.tujuhsembilan.smartedutelu.domain.support.repository.*;
+import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,7 @@ public class TicketService {
     private final TicketPriorityRepository priorityRepository;
     private final TicketStatusRepository statusRepository;
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
     private final ExamRepository examRepository;
 
     @Transactional(readOnly = true)
@@ -62,10 +65,12 @@ public class TicketService {
         return ticketRepository.findByAssignedToId(user.getId(), pageable).map(TicketResponse::from);
     }
 
+    // I1: Ownership/authorization check for ticket access
     @Transactional(readOnly = true)
     public TicketResponse getTicket(UUID id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_TKT_001));
+        checkTicketAccess(ticket);
         return TicketResponse.from(ticket);
     }
 
@@ -115,8 +120,16 @@ public class TicketService {
                     .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_TKT_004)));
         }
         if (request.getAssignedTo() != null) {
-            ticket.setAssignedTo(userRepository.findById(request.getAssignedTo())
-                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001)));
+            User assignee = userRepository.findById(request.getAssignedTo())
+                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
+            // I4: Validate that assignee has ADMIN or SUPPORT role
+            boolean hasStaffRole = !userRoleRepository.findByUserIdAndRoleNameIn(
+                    assignee.getId(), List.of("admin", "support")).isEmpty();
+            if (!hasStaffRole) {
+                throw new BusinessException(ErrorCode.SE_CMN_006,
+                        "User harus memiliki role ADMIN atau SUPPORT untuk menjadi assignee");
+            }
+            ticket.setAssignedTo(assignee);
         }
 
         ticket.setUpdatedAt(OffsetDateTime.now());
@@ -127,6 +140,7 @@ public class TicketService {
     public TicketResponse closeTicket(UUID id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_TKT_001));
+        checkTicketAccess(ticket);
         ticket.setClosedAt(OffsetDateTime.now());
         ticket.setUpdatedAt(OffsetDateTime.now());
         return TicketResponse.from(ticketRepository.save(ticket));
@@ -134,6 +148,9 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public List<TicketMessageResponse> listMessages(UUID ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_TKT_001));
+        checkTicketAccess(ticket);
         return messageRepository.findByTicketIdOrderByCreatedAtAsc(ticketId)
                 .stream().map(TicketMessageResponse::from).toList();
     }
@@ -142,6 +159,7 @@ public class TicketService {
     public TicketMessageResponse addMessage(UUID ticketId, CreateTicketMessageRequest request) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_TKT_001));
+        checkTicketAccess(ticket);
         User currentUser = resolveCurrentUser();
 
         TicketMessage message = TicketMessage.builder()
@@ -161,6 +179,18 @@ public class TicketService {
         String date = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String random = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         return "TKT-" + date + "-" + random;
+    }
+
+    // I1: Check if current user is allowed to access the ticket
+    private void checkTicketAccess(Ticket ticket) {
+        if (SecurityUtils.hasCurrentRole("ADMIN")) return;
+        User currentUser = resolveCurrentUser();
+        boolean isOwner = ticket.getUser() != null && ticket.getUser().getId().equals(currentUser.getId());
+        boolean isAssignee = ticket.getAssignedTo() != null
+                && ticket.getAssignedTo().getId().equals(currentUser.getId());
+        if (!isOwner && !isAssignee) {
+            throw new BusinessException(ErrorCode.SE_CMN_004, "Tidak memiliki akses ke tiket ini");
+        }
     }
 
     private User resolveCurrentUser() {

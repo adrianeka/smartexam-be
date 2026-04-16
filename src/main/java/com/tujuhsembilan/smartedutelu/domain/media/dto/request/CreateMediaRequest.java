@@ -16,7 +16,7 @@ public class CreateMediaRequest {
 
     private String fileType;
 
-    private Integer fileSize;
+    private Long fileSize;
 
     private String context;
 

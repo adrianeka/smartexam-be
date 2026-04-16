@@ -1,5 +1,6 @@
 package com.tujuhsembilan.smartedutelu.domain.tag.entity;
 
+import com.tujuhsembilan.smartedutelu.domain.tag.enums.TaggableType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,8 +27,9 @@ public class Taggable {
     @JoinColumn(name = "tag_id", nullable = false)
     private Tag tag;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "taggable_type", nullable = false, length = 100)
-    private String taggableType;
+    private TaggableType taggableType;
 
     @Column(name = "taggable_id", nullable = false)
     private UUID taggableId;

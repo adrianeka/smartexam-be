@@ -5,6 +5,7 @@ import com.tujuhsembilan.smartedutelu.common.dto.PageResponse;
 import com.tujuhsembilan.smartedutelu.domain.tag.dto.request.AttachTagRequest;
 import com.tujuhsembilan.smartedutelu.domain.tag.dto.request.CreateTagRequest;
 import com.tujuhsembilan.smartedutelu.domain.tag.dto.response.TagResponse;
+import com.tujuhsembilan.smartedutelu.domain.tag.enums.TaggableType;
 import com.tujuhsembilan.smartedutelu.domain.tag.service.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -63,7 +64,7 @@ public class TagController {
     @Operation(summary = "Lepas tag dari entitas")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> detach(@RequestParam UUID tagId,
-                                        @RequestParam String taggableType,
+                                        @RequestParam TaggableType taggableType,
                                         @RequestParam UUID taggableId) {
         tagService.detachTag(tagId, taggableType, taggableId);
         return ResponseEntity.noContent().build();
@@ -73,7 +74,7 @@ public class TagController {
     @Operation(summary = "Daftar tag untuk entitas tertentu")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<TagResponse>>> getTagsForEntity(
-            @RequestParam String taggableType,
+            @RequestParam TaggableType taggableType,
             @RequestParam UUID taggableId) {
         return ResponseEntity.ok(ApiResponse.success(tagService.getTagsForEntity(taggableType, taggableId)));
     }

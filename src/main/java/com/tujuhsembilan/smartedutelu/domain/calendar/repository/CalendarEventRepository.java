@@ -15,7 +15,7 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, UU
 
     Page<CalendarEvent> findByTenantId(UUID tenantId, Pageable pageable);
 
-    @Query("SELECT e FROM CalendarEvent e WHERE e.tenant.id = :tenantId AND e.startDate >= :from AND e.endDate <= :to ORDER BY e.startDate ASC")
+    @Query("SELECT e FROM CalendarEvent e WHERE e.tenant.id = :tenantId AND e.startDate < :to AND e.endDate > :from ORDER BY e.startDate ASC")
     List<CalendarEvent> findByTenantIdAndDateRange(@Param("tenantId") UUID tenantId,
                                                     @Param("from") OffsetDateTime from,
                                                     @Param("to") OffsetDateTime to);

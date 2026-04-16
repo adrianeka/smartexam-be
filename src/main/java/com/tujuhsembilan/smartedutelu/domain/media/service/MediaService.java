@@ -24,7 +24,9 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -52,9 +54,24 @@ public class MediaService {
 
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
+    // H1: Magic byte signatures for content-type validation
+    private static final Map<String, byte[]> MAGIC_BYTES = Map.of(
+            "image/jpeg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF},
+            "image/jpg", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF},
+            "image/png", new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47},
+            "image/gif", new byte[]{0x47, 0x49, 0x46},
+            "application/pdf", new byte[]{0x25, 0x50, 0x44, 0x46}
+    );
+
+    // H2: Ownership check — force ownerId to currentUser for non-ADMIN
     @Transactional(readOnly = true)
     public Page<MediaResponse> listByOwner(UUID ownerId, Pageable pageable) {
-        return mediaFileRepository.findByOwnerId(ownerId, pageable).map(MediaResponse::from);
+        UUID effectiveOwnerId = ownerId;
+        if (!SecurityUtils.hasCurrentRole("ADMIN")) {
+            User currentUser = resolveCurrentUser();
+            effectiveOwnerId = currentUser.getId();
+        }
+        return mediaFileRepository.findByOwnerId(effectiveOwnerId, pageable).map(MediaResponse::from);
     }
 
     @Transactional(readOnly = true)
@@ -90,6 +107,9 @@ public class MediaService {
             throw new BusinessException(ErrorCode.SE_CMN_001);
         }
 
+        // H1: Validate magic bytes to prevent content-type spoofing
+        validateMagicBytes(file, contentType);
+
         User currentUser = resolveCurrentUser();
 
         String extension = getExtension(file.getOriginalFilename());
@@ -115,7 +135,7 @@ public class MediaService {
                 .fileName(file.getOriginalFilename())
                 .filePath(fileUrl)
                 .fileType(contentType)
-                .fileSize((int) file.getSize())
+                .fileSize(file.getSize())   // J16: Long to support large files
                 .context(context)
                 .contextId(contextId)
                 .build();
@@ -127,10 +147,20 @@ public class MediaService {
     public MediaResponse registerMedia(CreateMediaRequest request) {
         User currentUser = resolveCurrentUser();
 
+        // H6: Validate filePath to prevent path traversal
+        String filePath = request.getFilePath();
+        if (filePath.contains("..") || filePath.contains("\\")) {
+            throw new BusinessException(ErrorCode.SE_CMN_006, "File path tidak valid");
+        }
+        String expectedPrefix = endpoint + "/" + bucket + "/";
+        if (!filePath.startsWith(expectedPrefix) && !filePath.startsWith("media/")) {
+            throw new BusinessException(ErrorCode.SE_CMN_006, "File path harus menggunakan prefix yang valid");
+        }
+
         MediaFile file = MediaFile.builder()
                 .owner(currentUser)
                 .fileName(request.getFileName())
-                .filePath(request.getFilePath())
+                .filePath(filePath)
                 .fileType(request.getFileType())
                 .fileSize(request.getFileSize())
                 .context(request.getContext())
@@ -163,6 +193,27 @@ public class MediaService {
     private String getExtension(String filename) {
         if (filename == null || !filename.contains(".")) return "";
         return filename.substring(filename.lastIndexOf('.'));
+    }
+
+    private void validateMagicBytes(MultipartFile file, String contentType) {
+        byte[] expected = MAGIC_BYTES.get(contentType.toLowerCase());
+        if (expected == null) return; // No magic bytes check for video/audio types
+
+        try (InputStream is = file.getInputStream()) {
+            byte[] header = new byte[expected.length];
+            int read = is.read(header);
+            if (read < expected.length) {
+                throw new BusinessException(ErrorCode.SE_CMN_001, "File terlalu kecil atau kosong");
+            }
+            for (int i = 0; i < expected.length; i++) {
+                if (header[i] != expected[i]) {
+                    throw new BusinessException(ErrorCode.SE_CMN_001,
+                            "Content-type tidak sesuai dengan isi file");
+                }
+            }
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.SE_CMN_007, "Gagal membaca file");
+        }
     }
 
     private User resolveCurrentUser() {

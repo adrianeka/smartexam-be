@@ -1,5 +1,7 @@
 package com.tujuhsembilan.smartedutelu.config;
 
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,10 +9,14 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import java.net.URI;
 
 @Configuration
+@Slf4j
 public class S3Config {
 
     @Value("${application.minio.endpoint}")
@@ -22,6 +28,9 @@ public class S3Config {
     @Value("${application.minio.secret-key}")
     private String secretKey;
 
+    @Value("${application.minio.bucket}")
+    private String bucket;
+
     @Bean
     public S3Client s3Client() {
         return S3Client.builder()
@@ -31,5 +40,20 @@ public class S3Config {
                         AwsBasicCredentials.create(accessKey, secretKey)))
                 .forcePathStyle(true)
                 .build();
+    }
+
+    // H8: Auto-create bucket at startup if it doesn't exist
+    @PostConstruct
+    public void ensureBucketExists() {
+        S3Client client = s3Client();
+        try {
+            client.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
+            log.info("MinIO bucket '{}' sudah ada", bucket);
+        } catch (NoSuchBucketException e) {
+            client.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
+            log.info("MinIO bucket '{}' berhasil dibuat", bucket);
+        } catch (Exception e) {
+            log.warn("Tidak bisa memeriksa/membuat bucket '{}': {}", bucket, e.getMessage());
+        }
     }
 }
