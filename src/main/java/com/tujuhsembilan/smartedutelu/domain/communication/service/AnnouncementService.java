@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.communication.service;
 
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
+import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.communication.dto.request.CreateAnnouncementRequest;
@@ -11,6 +12,7 @@ import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRepository;
 import com.tujuhsembilan.smartedutelu.domain.tenant.entity.Tenant;
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantRepository;
+import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +30,7 @@ public class AnnouncementService {
     private final AnnouncementRepository announcementRepository;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
+    private final TenantUserRepository tenantUserRepository;
 
     @Transactional(readOnly = true)
     public Page<AnnouncementResponse> listByTenant(UUID tenantId, Pageable pageable) {
@@ -52,6 +55,10 @@ public class AnnouncementService {
         User creator = userRepository.findByEmail(currentEmail)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
+        if (!tenantUserRepository.existsByTenantIdAndUserId(tenant.getId(), creator.getId())) {
+            throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses ke tenant ini");
+        }
+
         Announcement announcement = Announcement.builder()
                 .tenant(tenant)
                 .title(request.getTitle())
@@ -69,6 +76,20 @@ public class AnnouncementService {
     public void delete(UUID id) {
         Announcement ann = announcementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_COM_001));
+
+        String currentEmail = SecurityUtils.getCurrentUsername()
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
+
+        if (!ann.getCreatedBy().getId().equals(currentUser.getId()) && !SecurityUtils.hasCurrentRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses untuk menghapus pengumuman ini");
+        }
+
+        if (!tenantUserRepository.existsByTenantIdAndUserId(ann.getTenant().getId(), currentUser.getId())) {
+            throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses ke tenant ini");
+        }
+
         announcementRepository.delete(ann);
         log.info("Announcement deleted: {}", id);
     }

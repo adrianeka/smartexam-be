@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.common.security;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -27,5 +28,14 @@ public class SecurityUtils {
         }
 
         return Optional.empty();
+    }
+
+    public static boolean hasCurrentRole(String role) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) return false;
+        String target = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(target::equals);
     }
 }

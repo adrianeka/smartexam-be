@@ -40,7 +40,9 @@ public class AnalyticsService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_EXM_001));
 
         long totalParticipants = resultRepository.countByExamId(examId);
+        long totalCompletions = resultRepository.countCompletionsByExamId(examId);
         long totalPassed = resultRepository.countByExamIdAndIsPassed(examId, true);
+        BigDecimal avgScore = resultRepository.avgScoreByExamId(examId);
 
         BigDecimal passRate = totalParticipants > 0
                 ? BigDecimal.valueOf(totalPassed)
@@ -52,7 +54,8 @@ public class AnalyticsService {
                 .orElse(ExamAnalytics.builder().exam(exam).build());
 
         analytics.setTotalParticipants((int) totalParticipants);
-        analytics.setTotalCompletions((int) totalParticipants);
+        analytics.setTotalCompletions((int) totalCompletions);
+        analytics.setAvgScore(avgScore);
         analytics.setPassRate(passRate);
         analytics.setCalculatedAt(OffsetDateTime.now());
 

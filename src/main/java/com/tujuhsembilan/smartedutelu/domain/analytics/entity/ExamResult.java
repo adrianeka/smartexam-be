@@ -17,13 +17,18 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "exam_results")
+@Table(name = "exam_results", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "exam_id"})
+})
 public class ExamResult {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
     private UUID id;
+
+    @Version
+    private Long version;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "attempt_id", nullable = false, unique = true)

@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.communication.service;
 
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
+import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.communication.dto.request.UpdateChannelRequest;
@@ -48,6 +49,12 @@ public class NotificationService {
     public NotificationResponse markAsRead(UUID notificationId) {
         Notification notif = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_COM_002));
+
+        User currentUser = resolveCurrentUser();
+        if (!notif.getUser().getId().equals(currentUser.getId())) {
+            throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses ke notifikasi ini");
+        }
+
         notif.setIsRead(true);
         return NotificationResponse.from(notificationRepository.save(notif));
     }

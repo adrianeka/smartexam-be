@@ -27,6 +27,9 @@ public class ExamAttempt {
     @EqualsAndHashCode.Include
     private UUID id;
 
+    @Version
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_id", nullable = false)
     private Exam exam;

@@ -1,5 +1,6 @@
 package com.tujuhsembilan.smartedutelu.domain.analytics.entity;
 
+import com.tujuhsembilan.smartedutelu.domain.analytics.enums.AppealStatus;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,9 +34,10 @@ public class ExamAppeal {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String reason;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     @Builder.Default
-    private String status = "pending";
+    private AppealStatus status = AppealStatus.PENDING;
 
     @Column(columnDefinition = "TEXT")
     private String resolution;

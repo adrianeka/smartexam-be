@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.certificate.service;
 
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
+import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.certificate.dto.request.CreateTemplateRequest;
@@ -41,6 +42,8 @@ public class CertificateTemplateService {
 
     @Transactional
     public TemplateResponse createTemplate(CreateTemplateRequest request) {
+        validateBackgroundUrl(request.getBackgroundUrl());
+
         String currentEmail = SecurityUtils.getCurrentUsername()
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
         User creator = userRepository.findByEmail(currentEmail)
@@ -51,7 +54,7 @@ public class CertificateTemplateService {
                 .description(request.getDescription())
                 .orientation(request.getOrientation() != null ? request.getOrientation() : "landscape")
                 .backgroundUrl(request.getBackgroundUrl())
-                .fields(request.getFields())
+                .fields(sanitizeFields(request.getFields()))
                 .isDefault(request.getIsDefault() != null ? request.getIsDefault() : false)
                 .createdBy(creator)
                 .build();
@@ -69,8 +72,11 @@ public class CertificateTemplateService {
         if (request.getName() != null) template.setName(request.getName());
         if (request.getDescription() != null) template.setDescription(request.getDescription());
         if (request.getOrientation() != null) template.setOrientation(request.getOrientation());
-        if (request.getBackgroundUrl() != null) template.setBackgroundUrl(request.getBackgroundUrl());
-        if (request.getFields() != null) template.setFields(request.getFields());
+        if (request.getBackgroundUrl() != null) {
+            validateBackgroundUrl(request.getBackgroundUrl());
+            template.setBackgroundUrl(request.getBackgroundUrl());
+        }
+        if (request.getFields() != null) template.setFields(sanitizeFields(request.getFields()));
         if (request.getIsDefault() != null) template.setIsDefault(request.getIsDefault());
 
         return TemplateResponse.from(templateRepository.save(template));
@@ -82,5 +88,27 @@ public class CertificateTemplateService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_CRT_001));
         templateRepository.delete(template);
         log.info("Certificate template deleted: {}", id);
+    }
+
+    private void validateBackgroundUrl(String url) {
+        if (url != null && !url.isBlank()) {
+            if (!url.startsWith("https://")) {
+                throw new BusinessException(ErrorCode.SE_CMN_006, "Background URL harus menggunakan https://");
+            }
+        }
+    }
+
+    private java.util.Map<String, Object> sanitizeFields(java.util.Map<String, Object> fields) {
+        if (fields == null) return null;
+        java.util.Map<String, Object> sanitized = new java.util.LinkedHashMap<>();
+        for (java.util.Map.Entry<String, Object> entry : fields.entrySet()) {
+            String key = entry.getKey().replaceAll("[<>\"'&]", "");
+            Object value = entry.getValue();
+            if (value instanceof String s) {
+                value = s.replaceAll("[<>\"'&]", "");
+            }
+            sanitized.put(key, value);
+        }
+        return sanitized;
     }
 }

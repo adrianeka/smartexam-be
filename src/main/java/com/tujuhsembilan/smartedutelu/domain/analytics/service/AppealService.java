@@ -9,6 +9,7 @@ import com.tujuhsembilan.smartedutelu.domain.analytics.dto.request.ResolveAppeal
 import com.tujuhsembilan.smartedutelu.domain.analytics.dto.response.AppealResponse;
 import com.tujuhsembilan.smartedutelu.domain.analytics.entity.ExamAppeal;
 import com.tujuhsembilan.smartedutelu.domain.analytics.entity.ExamResult;
+import com.tujuhsembilan.smartedutelu.domain.analytics.enums.AppealStatus;
 import com.tujuhsembilan.smartedutelu.domain.analytics.repository.ExamAppealRepository;
 import com.tujuhsembilan.smartedutelu.domain.analytics.repository.ExamResultRepository;
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
@@ -35,7 +36,8 @@ public class AppealService {
     @Transactional(readOnly = true)
     public Page<AppealResponse> listAppeals(String status, Pageable pageable) {
         if (status != null) {
-            return appealRepository.findByStatus(status, pageable).map(AppealResponse::from);
+            AppealStatus appealStatus = AppealStatus.fromString(status);
+            return appealRepository.findByStatus(appealStatus, pageable).map(AppealResponse::from);
         }
         return appealRepository.findAll(pageable).map(AppealResponse::from);
     }
@@ -49,6 +51,10 @@ public class AppealService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
         User user = userRepository.findByEmail(currentEmail)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
+
+        if (!result.getUser().getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.SE_CMN_004, "Anda hanya bisa mengajukan banding untuk hasil ujian Anda sendiri");
+        }
 
         ExamAppeal appeal = ExamAppeal.builder()
                 .result(result)
@@ -66,7 +72,7 @@ public class AppealService {
         ExamAppeal appeal = appealRepository.findById(appealId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_RES_003));
 
-        if ("approved".equals(appeal.getStatus()) || "rejected".equals(appeal.getStatus())) {
+        if (appeal.getStatus() == AppealStatus.APPROVED || appeal.getStatus() == AppealStatus.REJECTED) {
             throw new BusinessException(ErrorCode.SE_RES_004);
         }
 
@@ -75,7 +81,8 @@ public class AppealService {
         User resolver = userRepository.findByEmail(currentEmail)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
-        appeal.setStatus(request.getStatus());
+        AppealStatus newStatus = AppealStatus.fromString(request.getStatus());
+        appeal.setStatus(newStatus);
         appeal.setResolution(request.getResolution());
         appeal.setResolvedBy(resolver);
         appeal.setResolvedAt(OffsetDateTime.now());

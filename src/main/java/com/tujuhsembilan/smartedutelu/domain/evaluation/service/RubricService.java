@@ -38,7 +38,7 @@ public class RubricService {
 
     @Transactional(readOnly = true)
     public List<RubricResponse> getRubricsByQuestion(UUID questionId) {
-        return rubricRepository.findByQuestionId(questionId).stream()
+        return rubricRepository.findByQuestionIdWithCriteria(questionId).stream()
                 .map(RubricResponse::from)
                 .toList();
     }

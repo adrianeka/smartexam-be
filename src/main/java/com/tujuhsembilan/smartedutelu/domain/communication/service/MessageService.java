@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.communication.service;
 
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
+import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
 import com.tujuhsembilan.smartedutelu.common.security.SecurityUtils;
 import com.tujuhsembilan.smartedutelu.domain.communication.dto.request.SendMessageRequest;
@@ -36,6 +37,13 @@ public class MessageService {
     public MessageResponse getById(UUID id) {
         Message msg = messageRepository.findByIdWithAttachments(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_COM_003));
+
+        User currentUser = resolveCurrentUser();
+        if (!msg.getSender().getId().equals(currentUser.getId())
+                && !msg.getReceiver().getId().equals(currentUser.getId())) {
+            throw new BusinessException(ErrorCode.SE_CMN_004, "Anda tidak memiliki akses ke pesan ini");
+        }
+
         return MessageResponse.from(msg);
     }
 
@@ -61,6 +69,12 @@ public class MessageService {
     public MessageResponse markAsRead(UUID id) {
         Message msg = messageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_COM_003));
+
+        User currentUser = resolveCurrentUser();
+        if (!msg.getReceiver().getId().equals(currentUser.getId())) {
+            throw new BusinessException(ErrorCode.SE_CMN_004, "Anda hanya bisa menandai pesan yang ditujukan kepada Anda");
+        }
+
         msg.setIsRead(true);
         return MessageResponse.from(messageRepository.save(msg));
     }

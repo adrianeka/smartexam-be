@@ -18,7 +18,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "certificates")
+@Table(name = "certificates", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "exam_id"})
+})
 public class Certificate {
 
     @Id

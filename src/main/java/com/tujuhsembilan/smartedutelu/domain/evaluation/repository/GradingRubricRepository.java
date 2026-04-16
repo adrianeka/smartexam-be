@@ -13,6 +13,9 @@ public interface GradingRubricRepository extends JpaRepository<GradingRubric, UU
 
     List<GradingRubric> findByQuestionId(UUID questionId);
 
+    @Query("SELECT DISTINCT r FROM GradingRubric r LEFT JOIN FETCH r.criteria WHERE r.question.id = :questionId")
+    List<GradingRubric> findByQuestionIdWithCriteria(@Param("questionId") UUID questionId);
+
     @Query("SELECT r FROM GradingRubric r LEFT JOIN FETCH r.criteria WHERE r.id = :id")
     Optional<GradingRubric> findByIdWithCriteria(@Param("id") UUID id);
 }

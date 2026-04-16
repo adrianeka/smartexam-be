@@ -27,7 +27,7 @@ public class AppealResponse {
                 .resultId(a.getResult().getId())
                 .userId(a.getUser().getId())
                 .reason(a.getReason())
-                .status(a.getStatus())
+                .status(a.getStatus() != null ? a.getStatus().name() : null)
                 .resolution(a.getResolution())
                 .resolvedBy(a.getResolvedBy() != null ? a.getResolvedBy().getId() : null)
                 .createdAt(a.getCreatedAt())
