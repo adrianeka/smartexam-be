@@ -33,8 +33,8 @@ public final class UserSpecification {
             return null;
         }
         return (root, query, cb) -> {
-            var userRoles = root.join("userRoles", JoinType.LEFT);
-            var role = userRoles.join("role", JoinType.LEFT);
+            var userRoles = root.join("userRoles", JoinType.INNER);
+            var role = userRoles.join("role", JoinType.INNER);
             return cb.equal(cb.lower(role.get("name")), roleName.toLowerCase());
         };
     }

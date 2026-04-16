@@ -17,6 +17,7 @@ import com.tujuhsembilan.smartedutelu.domain.tenant.repository.OrganizationRepos
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.OrganizationUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -107,18 +108,18 @@ public class OrganizationService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
-        if (organizationUserRepository.existsByOrganizationIdAndUserId(orgId, user.getId())) {
+        try {
+            OrganizationUser ou = organizationUserRepository.save(OrganizationUser.builder()
+                    .organization(org)
+                    .user(user)
+                    .role(request.getRole() != null ? request.getRole() : "member")
+                    .build());
+
+            log.info("Added user {} to organization {}", user.getEmail(), org.getName());
+            return toMemberResponse(ou, user);
+        } catch (DataIntegrityViolationException e) {
             throw new DuplicateResourceException(ErrorCode.SE_ORG_003);
         }
-
-        OrganizationUser ou = organizationUserRepository.save(OrganizationUser.builder()
-                .organization(org)
-                .user(user)
-                .role(request.getRole() != null ? request.getRole() : "member")
-                .build());
-
-        log.info("Added user {} to organization {}", user.getEmail(), org.getName());
-        return toMemberResponse(ou, user);
     }
 
     @Transactional

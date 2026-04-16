@@ -1,11 +1,13 @@
 package com.tujuhsembilan.smartedutelu.common.security;
 
+import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserSessionRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
+    private final UserSessionRepository userSessionRepository;
 
     @Override
     protected void doFilterInternal(
@@ -66,6 +71,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     // Daftarkan user sebagai "authenticated"
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                    // B4: Update session lastActive asynchronously
+                    try {
+                        UUID sessionId = jwtUtil.extractSessionId(jwt);
+                        if (sessionId != null) {
+                            updateSessionLastActive(sessionId);
+                        }
+                    } catch (Exception e) {
+                        logger.debug("Failed to update session lastActive: " + e.getMessage());
+                    }
                 }
             }
         } catch (io.jsonwebtoken.ExpiredJwtException ex) {
@@ -79,5 +94,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    @Async
+    protected void updateSessionLastActive(UUID sessionId) {
+        userSessionRepository.findById(sessionId).ifPresent(session -> {
+            session.setLastActive(LocalDateTime.now());
+            userSessionRepository.save(session);
+        });
     }
 }

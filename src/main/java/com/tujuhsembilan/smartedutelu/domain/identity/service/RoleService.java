@@ -1,6 +1,8 @@
 package com.tujuhsembilan.smartedutelu.domain.identity.service;
 
+import com.tujuhsembilan.smartedutelu.common.dto.PageResponse;
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
+import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.DuplicateResourceException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
 import com.tujuhsembilan.smartedutelu.domain.identity.dto.request.AssignPermissionsRequest;
@@ -14,13 +16,17 @@ import com.tujuhsembilan.smartedutelu.domain.identity.entity.RolePermission;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.PermissionRepository;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.RolePermissionRepository;
 import com.tujuhsembilan.smartedutelu.domain.identity.repository.RoleRepository;
+import com.tujuhsembilan.smartedutelu.domain.identity.repository.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,14 +36,16 @@ public class RoleService {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
     private final RolePermissionRepository rolePermissionRepository;
+    private final UserRoleRepository userRoleRepository;
 
     // ── Read ────────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<RoleResponse> getAllRoles() {
-        return roleRepository.findAllWithPermissions().stream()
-                .map(this::toRoleResponse)
-                .toList();
+    public PageResponse<RoleResponse> getAllRoles(Pageable pageable) {
+        return PageResponse.of(
+                roleRepository.findAllWithPermissions(pageable)
+                        .map(this::toRoleResponse)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +114,13 @@ public class RoleService {
     public void deleteRole(UUID id) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_ROL_001));
+
+        long usageCount = userRoleRepository.countByRoleId(id);
+        if (usageCount > 0) {
+            throw new BusinessException(ErrorCode.SE_ROL_003,
+                    "Role '" + role.getName() + "' masih digunakan oleh " + usageCount + " user");
+        }
+
         roleRepository.delete(role);
         log.info("Deleted role: {}", role.getName());
     }
@@ -120,16 +135,32 @@ public class RoleService {
             throw new ResourceNotFoundException(ErrorCode.SE_PRM_001);
         }
 
-        // Replace all existing permissions for this role
-        rolePermissionRepository.deleteByRoleId(roleId);
+        // B12: Diff-based approach instead of delete-then-insert
+        List<RolePermission> existing = rolePermissionRepository.findByRoleId(roleId);
+        Set<UUID> requestedIds = request.getPermissionIds().stream().collect(Collectors.toSet());
+        Set<UUID> existingIds = existing.stream()
+                .map(rp -> rp.getPermission().getId())
+                .collect(Collectors.toSet());
 
-        List<RolePermission> newMappings = permissions.stream()
+        // Remove permissions no longer requested
+        List<RolePermission> toDelete = existing.stream()
+                .filter(rp -> !requestedIds.contains(rp.getPermission().getId()))
+                .toList();
+        if (!toDelete.isEmpty()) {
+            rolePermissionRepository.deleteAll(toDelete);
+        }
+
+        // Add newly requested permissions
+        List<RolePermission> toAdd = permissions.stream()
+                .filter(p -> !existingIds.contains(p.getId()))
                 .map(p -> RolePermission.builder()
                         .role(role)
                         .permission(p)
                         .build())
                 .toList();
-        rolePermissionRepository.saveAll(newMappings);
+        if (!toAdd.isEmpty()) {
+            rolePermissionRepository.saveAll(toAdd);
+        }
 
         log.info("Assigned {} permissions to role: {}", permissions.size(), role.getName());
         return permissions.stream().map(this::toPermissionResponse).toList();

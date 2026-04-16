@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.tenant.controller;
 
 import com.tujuhsembilan.smartedutelu.common.dto.ApiResponse;
+import com.tujuhsembilan.smartedutelu.common.dto.PageResponse;
 import com.tujuhsembilan.smartedutelu.domain.tenant.dto.request.*;
 import com.tujuhsembilan.smartedutelu.domain.tenant.dto.response.MemberResponse;
 import com.tujuhsembilan.smartedutelu.domain.tenant.dto.response.OrganizationResponse;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,8 +35,8 @@ public class TenantController {
 
     @GetMapping
     @Operation(summary = "Daftar semua tenant")
-    public ResponseEntity<ApiResponse<List<TenantResponse>>> listTenants() {
-        List<TenantResponse> tenants = tenantService.getAllTenants();
+    public ResponseEntity<ApiResponse<PageResponse<TenantResponse>>> listTenants(Pageable pageable) {
+        PageResponse<TenantResponse> tenants = tenantService.getAllTenants(pageable);
         return ResponseEntity.ok(ApiResponse.success("Daftar tenant berhasil diambil", tenants));
     }
 

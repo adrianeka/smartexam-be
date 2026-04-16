@@ -14,6 +14,8 @@ import com.tujuhsembilan.smartedutelu.domain.identity.repository.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -47,6 +49,15 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
+    private final StringRedisTemplate redisTemplate;
+
+    private static final String LOGIN_FAIL_PREFIX = "login_fail:";
+
+    @Value("${application.security.login.max-attempts:5}")
+    private int maxLoginAttempts;
+
+    @Value("${application.security.login.lock-duration-minutes:15}")
+    private int lockDurationMinutes;
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
@@ -79,14 +90,30 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
+        // B13: Check brute force lockout
+        String failKey = LOGIN_FAIL_PREFIX + request.getEmail().toLowerCase();
+        String failCountStr = redisTemplate.opsForValue().get(failKey);
+        if (failCountStr != null && Integer.parseInt(failCountStr) >= maxLoginAttempts) {
+            throw new BusinessException(ErrorCode.SE_AUT_001,
+                    "Akun terkunci sementara karena terlalu banyak percobaan login. Coba lagi dalam " + lockDurationMinutes + " menit");
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
         } catch (BadCredentialsException | DisabledException | LockedException e) {
-            log.warn("Login gagal untuk email: [MASKED] — alasan: {}", e.getClass().getSimpleName());
+            // B13: Increment failed login counter
+            Long count = redisTemplate.opsForValue().increment(failKey);
+            if (count != null && count == 1) {
+                redisTemplate.expire(failKey, Duration.ofMinutes(lockDurationMinutes));
+            }
+            log.warn("Login gagal untuk email: [MASKED] — alasan: {} (attempt {})", e.getClass().getSimpleName(), count);
             throw new BusinessException(ErrorCode.SE_AUT_001, "Email atau password salah");
         }
+
+        // B13: Clear failed attempts on successful login
+        redisTemplate.delete(failKey);
 
         User user = userRepository.findByEmailWithRoles(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User", request.getEmail()));
@@ -204,20 +231,28 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
+        // Atomically find and validate the token
         PasswordReset passwordReset = passwordResetRepository
                 .findByTokenAndExpiredAtAfter(request.getToken(), LocalDateTime.now())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SE_AUT_005, "Token reset password tidak valid atau sudah expired"));
 
         User user = passwordReset.getUser();
+
+        // B5: Check user status before allowing reset
+        if (!"active".equals(user.getStatus())) {
+            throw new BusinessException(ErrorCode.SE_AUT_003, "Akun tidak aktif, tidak dapat mereset password");
+        }
+
+        // B3: Atomic token consumption — prevents TOCTOU race condition
+        int deleted = passwordResetRepository.deleteByTokenAndExpiredAtAfter(request.getToken(), LocalDateTime.now());
+        if (deleted == 0) {
+            throw new BusinessException(ErrorCode.SE_AUT_005, "Token reset password sudah digunakan atau expired");
+        }
+
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        // Delete used token
-        passwordResetRepository.delete(passwordReset);
-
         log.info("Password reset berhasil untuk user ID: {}", user.getId());
-
-        log.debug("Password reset berhasil untuk user: {}", user.getEmail());
     }
 
     @Transactional(readOnly = true)

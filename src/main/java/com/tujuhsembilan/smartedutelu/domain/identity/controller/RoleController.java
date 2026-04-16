@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.identity.controller;
 
 import com.tujuhsembilan.smartedutelu.common.dto.ApiResponse;
+import com.tujuhsembilan.smartedutelu.common.dto.PageResponse;
 import com.tujuhsembilan.smartedutelu.domain.identity.dto.request.AssignPermissionsRequest;
 import com.tujuhsembilan.smartedutelu.domain.identity.dto.request.CreateRoleRequest;
 import com.tujuhsembilan.smartedutelu.domain.identity.dto.request.UpdateRoleRequest;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,8 +32,8 @@ public class RoleController {
 
     @GetMapping
     @Operation(summary = "Daftar semua role")
-    public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles() {
-        List<RoleResponse> roles = roleService.getAllRoles();
+    public ResponseEntity<ApiResponse<PageResponse<RoleResponse>>> getAllRoles(Pageable pageable) {
+        PageResponse<RoleResponse> roles = roleService.getAllRoles(pageable);
         return ResponseEntity.ok(ApiResponse.success("Daftar role berhasil diambil", roles));
     }
 

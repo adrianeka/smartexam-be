@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -135,8 +136,11 @@ public class UserService {
         User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        List<Role> roles = roleRepository.findAllById(request.getRoleIds());
-        if (roles.size() != request.getRoleIds().size()) {
+        // B8: Deduplicate role IDs to prevent duplicate assignment
+        List<UUID> uniqueRoleIds = new LinkedHashSet<>(request.getRoleIds()).stream().toList();
+
+        List<Role> roles = roleRepository.findAllById(uniqueRoleIds);
+        if (roles.size() != uniqueRoleIds.size()) {
             throw new BusinessException(ErrorCode.SE_CMN_002, "Satu atau lebih role tidak ditemukan");
         }
 

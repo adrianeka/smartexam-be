@@ -1,5 +1,6 @@
 package com.tujuhsembilan.smartedutelu.domain.tenant.service;
 
+import com.tujuhsembilan.smartedutelu.common.dto.PageResponse;
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
 import com.tujuhsembilan.smartedutelu.common.exception.DuplicateResourceException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
@@ -16,6 +17,8 @@ import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantRepository;
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,10 +37,11 @@ public class TenantService {
     // ── Tenant CRUD ─────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<TenantResponse> getAllTenants() {
-        return tenantRepository.findAll().stream()
-                .map(this::toTenantResponse)
-                .toList();
+    public PageResponse<TenantResponse> getAllTenants(Pageable pageable) {
+        return PageResponse.of(
+                tenantRepository.findAll(pageable)
+                        .map(this::toTenantResponse)
+        );
     }
 
     @Transactional
@@ -96,18 +100,18 @@ public class TenantService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
 
-        if (tenantUserRepository.existsByTenantIdAndUserId(tenantId, user.getId())) {
+        try {
+            TenantUser tu = tenantUserRepository.save(TenantUser.builder()
+                    .tenant(tenant)
+                    .user(user)
+                    .role(request.getRole() != null ? request.getRole() : "member")
+                    .build());
+
+            log.info("Added user {} to tenant {}", user.getEmail(), tenant.getName());
+            return toMemberResponse(tu, user);
+        } catch (DataIntegrityViolationException e) {
             throw new DuplicateResourceException(ErrorCode.SE_TNT_003);
         }
-
-        TenantUser tu = tenantUserRepository.save(TenantUser.builder()
-                .tenant(tenant)
-                .user(user)
-                .role(request.getRole() != null ? request.getRole() : "member")
-                .build());
-
-        log.info("Added user {} to tenant {}", user.getEmail(), tenant.getName());
-        return toMemberResponse(tu, user);
     }
 
     @Transactional

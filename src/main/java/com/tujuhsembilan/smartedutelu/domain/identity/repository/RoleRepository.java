@@ -1,6 +1,8 @@
 package com.tujuhsembilan.smartedutelu.domain.identity.repository;
 
 import com.tujuhsembilan.smartedutelu.domain.identity.entity.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -21,4 +23,8 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
 
     @Query("SELECT r FROM Role r LEFT JOIN FETCH r.rolePermissions rp LEFT JOIN FETCH rp.permission")
     List<Role> findAllWithPermissions();
+
+    @Query(value = "SELECT r FROM Role r LEFT JOIN FETCH r.rolePermissions rp LEFT JOIN FETCH rp.permission",
+           countQuery = "SELECT COUNT(r) FROM Role r")
+    Page<Role> findAllWithPermissions(Pageable pageable);
 }

@@ -36,6 +36,7 @@ public enum ErrorCode {
     // Role & Permission Errors (SE-ROL-xxx / SE-PRM-xxx)
     SE_ROL_001("SE-ROL-001", "Role not found"),
     SE_ROL_002("SE-ROL-002", "Role name already exists"),
+    SE_ROL_003("SE-ROL-003", "Role is still assigned to users"),
     SE_PRM_001("SE-PRM-001", "One or more permissions not found"),
 
     // Organization / Tenant Errors (SE-ORG-xxx)
