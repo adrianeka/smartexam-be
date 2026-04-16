@@ -1,5 +1,6 @@
 package com.tujuhsembilan.smartedutelu.domain.scheduling.service;
 
+import com.tujuhsembilan.smartedutelu.common.dto.PageResponse;
 import com.tujuhsembilan.smartedutelu.common.enums.ErrorCode;
 import com.tujuhsembilan.smartedutelu.common.exception.BusinessException;
 import com.tujuhsembilan.smartedutelu.common.exception.ResourceNotFoundException;
@@ -18,6 +19,7 @@ import com.tujuhsembilan.smartedutelu.domain.scheduling.repository.ExamSessionRe
 import com.tujuhsembilan.smartedutelu.domain.scheduling.repository.ProctorAssignmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,15 +38,14 @@ public class ProctoringService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<SessionResponse> listActiveSessions(UUID tenantId) {
-        return sessionRepository.findActiveSessions(tenantId).stream()
-                .map(this::toSessionSummary)
-                .toList();
+    public PageResponse<SessionResponse> listActiveSessions(UUID tenantId, Pageable pageable) {
+        return PageResponse.of(sessionRepository.findActiveSessions(tenantId, pageable)
+                .map(this::toSessionSummary));
     }
 
     @Transactional(readOnly = true)
-    public SessionResponse getSessionDetail(UUID sessionId) {
-        ExamSession session = sessionRepository.findByIdWithDetails(sessionId)
+    public SessionResponse getSessionDetail(UUID tenantId, UUID sessionId) {
+        ExamSession session = sessionRepository.findByIdAndTenantIdWithDetails(sessionId, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_SCH_003));
         return toSessionFull(session);
     }
@@ -57,6 +58,8 @@ public class ProctoringService {
         if (session.getEndTime() != null) {
             throw new BusinessException(ErrorCode.SE_SCH_004);
         }
+
+        assertCurrentUserIsProctor(sessionId);
 
         CheatingLog cheatingLog = cheatingLogRepository.save(CheatingLog.builder()
                 .session(session)
@@ -79,6 +82,8 @@ public class ProctoringService {
             throw new BusinessException(ErrorCode.SE_SCH_004);
         }
 
+        assertCurrentUserIsProctor(sessionId);
+
         session.setEndTime(OffsetDateTime.now());
         session = sessionRepository.save(session);
         log.info("Terminated session {}", sessionId);
@@ -98,6 +103,16 @@ public class ProctoringService {
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────
+
+    private void assertCurrentUserIsProctor(UUID sessionId) {
+        String currentEmail = SecurityUtils.getCurrentUsername()
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_USR_001));
+        if (!proctorAssignmentRepository.existsBySessionIdAndProctorId(sessionId, currentUser.getId())) {
+            throw new BusinessException(ErrorCode.SE_SCH_009);
+        }
+    }
 
     private SessionResponse toSessionSummary(ExamSession s) {
         return SessionResponse.builder()

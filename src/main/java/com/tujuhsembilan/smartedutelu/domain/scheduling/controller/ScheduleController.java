@@ -41,8 +41,10 @@ public class ScheduleController {
     @GetMapping("/{id}")
     @Operation(summary = "Detail jadwal")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<ApiResponse<ScheduleResponse>> getSchedule(@PathVariable UUID id) {
-        ScheduleResponse schedule = scheduleService.getById(id);
+    public ResponseEntity<ApiResponse<ScheduleResponse>> getSchedule(
+            @RequestParam UUID tenantId,
+            @PathVariable UUID id) {
+        ScheduleResponse schedule = scheduleService.getById(tenantId, id);
         return ResponseEntity.ok(ApiResponse.success("Detail jadwal berhasil diambil", schedule));
     }
 
@@ -60,17 +62,20 @@ public class ScheduleController {
     @Operation(summary = "Update jadwal")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<ApiResponse<ScheduleResponse>> updateSchedule(
+            @RequestParam UUID tenantId,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateScheduleRequest request) {
-        ScheduleResponse schedule = scheduleService.update(id, request);
+        ScheduleResponse schedule = scheduleService.update(tenantId, id, request);
         return ResponseEntity.ok(ApiResponse.success("Jadwal berhasil diperbarui", schedule));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Hapus jadwal")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<ApiResponse<Void>> deleteSchedule(@PathVariable UUID id) {
-        scheduleService.delete(id);
+    public ResponseEntity<ApiResponse<Void>> deleteSchedule(
+            @RequestParam UUID tenantId,
+            @PathVariable UUID id) {
+        scheduleService.delete(tenantId, id);
         return ResponseEntity.ok(ApiResponse.success("Jadwal berhasil dihapus", null));
     }
 }

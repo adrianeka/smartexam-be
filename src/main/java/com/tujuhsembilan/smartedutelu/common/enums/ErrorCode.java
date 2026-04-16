@@ -80,6 +80,9 @@ public enum ErrorCode {
     SE_SCH_004("SE-SCH-004", "Session already terminated"),
     SE_SCH_005("SE-SCH-005", "Registration not found"),
     SE_SCH_006("SE-SCH-006", "Already registered for this exam schedule"),
+    SE_SCH_007("SE-SCH-007", "Schedule start time must be in the future"),
+    SE_SCH_008("SE-SCH-008", "Maximum participants reached for this schedule"),
+    SE_SCH_009("SE-SCH-009", "Not authorized as proctor for this session"),
 
     // Evaluation & Grading Errors (SE-GRD-xxx)
     SE_GRD_001("SE-GRD-001", "Attempt not found"),

@@ -275,17 +275,33 @@ public class QuestionService {
         Question question = questionRepository.findByIdAndTenantId(questionId, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_QST_001));
 
-        int startPos = questionMediaRepository.findByQuestionIdOrderByPositionAsc(questionId).size();
-        for (UUID mediaId : mediaIds) {
-            if (questionMediaRepository.existsByQuestionIdAndMediaFileId(questionId, mediaId)) continue;
-            MediaFile mediaFile = mediaFileRepository.findById(mediaId)
-                    .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_MDA_001));
-            QuestionMedia qm = QuestionMedia.builder()
-                    .question(question)
-                    .mediaFile(mediaFile)
-                    .position(startPos++)
-                    .build();
-            questionMediaRepository.save(qm);
+        List<QuestionMedia> existing = questionMediaRepository.findByQuestionIdOrderByPositionAsc(questionId);
+        int startPos = existing.size();
+
+        // Filter out already-attached media IDs
+        var existingMediaIds = existing.stream()
+                .map(qm -> qm.getMediaFile().getId())
+                .collect(java.util.stream.Collectors.toSet());
+        List<UUID> newMediaIds = mediaIds.stream()
+                .filter(id -> !existingMediaIds.contains(id))
+                .toList();
+
+        if (!newMediaIds.isEmpty()) {
+            // Batch fetch all media files
+            List<MediaFile> mediaFiles = mediaFileRepository.findAllById(newMediaIds);
+            if (mediaFiles.size() != newMediaIds.size()) {
+                throw new ResourceNotFoundException(ErrorCode.SE_MDA_001);
+            }
+
+            List<QuestionMedia> toSave = new java.util.ArrayList<>();
+            for (MediaFile mediaFile : mediaFiles) {
+                toSave.add(QuestionMedia.builder()
+                        .question(question)
+                        .mediaFile(mediaFile)
+                        .position(startPos++)
+                        .build());
+            }
+            questionMediaRepository.saveAll(toSave);
         }
         return getMediaForQuestion(questionId);
     }

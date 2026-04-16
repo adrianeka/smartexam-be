@@ -43,7 +43,10 @@ public class EmailService {
             mailSender.send(message);
             log.debug("Password reset email sent to {}", toEmail);
         } catch (Exception e) {
-            log.error("Gagal mengirim email reset password: {}", e.getMessage());
+            // B15: Log full error for monitoring/alerting — email failure is non-blocking
+            // but must be visible in logs for operational troubleshooting
+            log.error("Gagal mengirim email reset password ke {}: {} — {}",
+                    toEmail, e.getClass().getSimpleName(), e.getMessage());
         }
     }
 }

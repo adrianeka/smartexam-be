@@ -32,11 +32,13 @@ public class ExamCategoryService {
     /**
      * Returns a full tree for a tenant: root categories with children nested recursively.
      */
+    private static final int MAX_TREE_DEPTH = 10;
+
     @Transactional(readOnly = true)
     public List<ExamCategoryResponse> getTree(UUID tenantId) {
         // Load all categories flat, then build tree in-memory (avoids recursive SQL)
         List<ExamCategory> all = categoryRepository.findByTenantIdOrderByPositionAscNameAsc(tenantId);
-        return buildTree(all, null);
+        return buildTree(all, null, 0);
     }
 
     /**
@@ -130,14 +132,15 @@ public class ExamCategoryService {
     }
 
     /** Builds a nested tree from a flat list, grouping by parentId. */
-    private List<ExamCategoryResponse> buildTree(List<ExamCategory> all, UUID parentId) {
+    private List<ExamCategoryResponse> buildTree(List<ExamCategory> all, UUID parentId, int depth) {
+        if (depth >= MAX_TREE_DEPTH) return List.of();
         return all.stream()
                 .filter(c -> parentId == null
                         ? c.getParent() == null
                         : c.getParent() != null && c.getParent().getId().equals(parentId))
                 .map(c -> {
                     ExamCategoryResponse r = toResponseFlat(c);
-                    List<ExamCategoryResponse> children = buildTree(all, c.getId());
+                    List<ExamCategoryResponse> children = buildTree(all, c.getId(), depth + 1);
                     if (!children.isEmpty()) {
                         r.setChildren(children);
                     }

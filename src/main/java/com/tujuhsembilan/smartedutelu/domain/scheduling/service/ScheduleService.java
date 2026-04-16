@@ -46,8 +46,8 @@ public class ScheduleService {
     }
 
     @Transactional(readOnly = true)
-    public ScheduleResponse getById(UUID id) {
-        ExamSchedule schedule = scheduleRepository.findById(id)
+    public ScheduleResponse getById(UUID tenantId, UUID id) {
+        ExamSchedule schedule = scheduleRepository.findByIdAndExamTenantId(id, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_SCH_001));
         return toResponse(schedule);
     }
@@ -56,6 +56,9 @@ public class ScheduleService {
     public ScheduleResponse create(CreateScheduleRequest request) {
         if (request.getEndTime().isBefore(request.getStartTime()) || request.getEndTime().isEqual(request.getStartTime())) {
             throw new BusinessException(ErrorCode.SE_SCH_002);
+        }
+        if (!request.getStartTime().isAfter(OffsetDateTime.now())) {
+            throw new BusinessException(ErrorCode.SE_SCH_007);
         }
 
         Exam exam = examRepository.findById(request.getExamId())
@@ -74,9 +77,16 @@ public class ScheduleService {
     }
 
     @Transactional
-    public ScheduleResponse update(UUID id, UpdateScheduleRequest request) {
-        ExamSchedule schedule = scheduleRepository.findById(id)
+    public ScheduleResponse update(UUID tenantId, UUID id, UpdateScheduleRequest request) {
+        ExamSchedule schedule = scheduleRepository.findByIdAndExamTenantId(id, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_SCH_001));
+
+        // D5: validate inputs before modifying entity
+        OffsetDateTime newStart = request.getStartTime() != null ? request.getStartTime() : schedule.getStartTime();
+        OffsetDateTime newEnd = request.getEndTime() != null ? request.getEndTime() : schedule.getEndTime();
+        if (newEnd.isBefore(newStart) || newEnd.isEqual(newStart)) {
+            throw new BusinessException(ErrorCode.SE_SCH_002);
+        }
 
         if (request.getStartTime() != null) schedule.setStartTime(request.getStartTime());
         if (request.getEndTime() != null) schedule.setEndTime(request.getEndTime());
@@ -84,18 +94,14 @@ public class ScheduleService {
         if (request.getLocation() != null) schedule.setLocation(request.getLocation());
         if (request.getIsActive() != null) schedule.setIsActive(request.getIsActive());
 
-        if (schedule.getEndTime().isBefore(schedule.getStartTime()) || schedule.getEndTime().isEqual(schedule.getStartTime())) {
-            throw new BusinessException(ErrorCode.SE_SCH_002);
-        }
-
         schedule = scheduleRepository.save(schedule);
         log.info("Updated schedule {}", id);
         return toResponse(schedule);
     }
 
     @Transactional
-    public void delete(UUID id) {
-        ExamSchedule schedule = scheduleRepository.findById(id)
+    public void delete(UUID tenantId, UUID id) {
+        ExamSchedule schedule = scheduleRepository.findByIdAndExamTenantId(id, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_SCH_001));
         scheduleRepository.delete(schedule);
         log.info("Deleted schedule {}", id);

@@ -1,5 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.exam.dto.request;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,10 +30,14 @@ public class CreateExamRequest {
 
     private String examType;
 
+    @Min(value = 1, message = "Durasi ujian minimal 1 menit")
     private Integer timeLimitMinutes;
 
+    @Min(value = 1, message = "Jumlah percobaan minimal 1")
     private Integer maxAttempts;
 
+    @Min(value = 0, message = "Persentase kelulusan minimal 0")
+    @Max(value = 100, message = "Persentase kelulusan maksimal 100")
     private Integer passPercentage;
 
     private BigDecimal totalScore;

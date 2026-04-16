@@ -12,6 +12,7 @@ import com.tujuhsembilan.smartedutelu.domain.tenant.entity.Tenant;
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,11 +48,16 @@ public class QuestionCategoryService {
             throw new DuplicateResourceException(ErrorCode.SE_QST_006);
         }
 
-        QuestionCategory category = categoryRepository.save(QuestionCategory.builder()
-                .tenant(tenant)
-                .name(request.getName())
-                .description(request.getDescription())
-                .build());
+        QuestionCategory category;
+        try {
+            category = categoryRepository.save(QuestionCategory.builder()
+                    .tenant(tenant)
+                    .name(request.getName())
+                    .description(request.getDescription())
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateResourceException(ErrorCode.SE_QST_006);
+        }
 
         log.info("Created question category: {} [tenant={}]", category.getName(), tenant.getName());
         return toResponse(category);

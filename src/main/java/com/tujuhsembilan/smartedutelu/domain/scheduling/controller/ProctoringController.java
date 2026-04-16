@@ -1,6 +1,7 @@
 package com.tujuhsembilan.smartedutelu.domain.scheduling.controller;
 
 import com.tujuhsembilan.smartedutelu.common.dto.ApiResponse;
+import com.tujuhsembilan.smartedutelu.common.dto.PageResponse;
 import com.tujuhsembilan.smartedutelu.domain.scheduling.dto.request.LogCheatingRequest;
 import com.tujuhsembilan.smartedutelu.domain.scheduling.dto.response.CheatingLogResponse;
 import com.tujuhsembilan.smartedutelu.domain.scheduling.dto.response.ProctorAssignmentResponse;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,17 +31,19 @@ public class ProctoringController {
     @GetMapping("/sessions")
     @Operation(summary = "List sesi aktif (monitoring)")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<ApiResponse<List<SessionResponse>>> listActiveSessions(
-            @RequestParam UUID tenantId) {
-        List<SessionResponse> sessions = proctoringService.listActiveSessions(tenantId);
+    public ResponseEntity<ApiResponse<PageResponse<SessionResponse>>> listActiveSessions(
+            @RequestParam UUID tenantId, Pageable pageable) {
+        PageResponse<SessionResponse> sessions = proctoringService.listActiveSessions(tenantId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Sesi aktif berhasil diambil", sessions));
     }
 
     @GetMapping("/sessions/{id}")
     @Operation(summary = "Detail sesi + cheating logs")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<ApiResponse<SessionResponse>> getSessionDetail(@PathVariable UUID id) {
-        SessionResponse session = proctoringService.getSessionDetail(id);
+    public ResponseEntity<ApiResponse<SessionResponse>> getSessionDetail(
+            @RequestParam UUID tenantId,
+            @PathVariable UUID id) {
+        SessionResponse session = proctoringService.getSessionDetail(tenantId, id);
         return ResponseEntity.ok(ApiResponse.success("Detail sesi berhasil diambil", session));
     }
 

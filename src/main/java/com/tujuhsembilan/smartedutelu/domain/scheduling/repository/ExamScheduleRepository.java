@@ -25,4 +25,7 @@ public interface ExamScheduleRepository extends JpaRepository<ExamSchedule, UUID
     List<ExamSchedule> findByTenantIdAndDateRange(UUID tenantId, OffsetDateTime from, OffsetDateTime to);
 
     Optional<ExamSchedule> findByIdAndExamId(UUID id, UUID examId);
+
+    @Query("SELECT s FROM ExamSchedule s WHERE s.id = :id AND s.exam.tenant.id = :tenantId")
+    Optional<ExamSchedule> findByIdAndExamTenantId(UUID id, UUID tenantId);
 }

@@ -1,6 +1,10 @@
 package com.tujuhsembilan.smartedutelu.domain.exam.repository;
 
 import com.tujuhsembilan.smartedutelu.domain.exam.entity.Exam;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +15,10 @@ import java.util.UUID;
 
 @Repository
 public interface ExamRepository extends JpaRepository<Exam, UUID>, JpaSpecificationExecutor<Exam> {
+
+    @Override
+    @EntityGraph(attributePaths = {"tenant", "category", "createdBy"})
+    Page<Exam> findAll(Specification<Exam> spec, Pageable pageable);
 
     @Query("SELECT e FROM Exam e " +
            "LEFT JOIN FETCH e.sections s " +

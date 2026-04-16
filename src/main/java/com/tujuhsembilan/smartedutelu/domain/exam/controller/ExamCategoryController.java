@@ -46,7 +46,7 @@ public class ExamCategoryController {
 
     @PostMapping
     @Operation(summary = "Buat kategori baru")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<ApiResponse<ExamCategoryResponse>> create(
             @Valid @RequestBody CreateExamCategoryRequest request) {
         ExamCategoryResponse cat = categoryService.create(request);
@@ -56,7 +56,7 @@ public class ExamCategoryController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update kategori")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<ApiResponse<ExamCategoryResponse>> update(
             @RequestParam UUID tenantId,
             @PathVariable UUID id,

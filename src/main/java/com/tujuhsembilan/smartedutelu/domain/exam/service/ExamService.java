@@ -23,6 +23,7 @@ import com.tujuhsembilan.smartedutelu.domain.tenant.entity.Tenant;
 import com.tujuhsembilan.smartedutelu.domain.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -120,7 +121,11 @@ public class ExamService {
                 .createdBy(creator)
                 .build();
 
-        exam = examRepository.save(exam);
+        try {
+            exam = examRepository.save(exam);
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateResourceException(ErrorCode.SE_EXM_003);
+        }
         log.info("Created exam: {} [tenant={}]", exam.getTitle(), tenant.getName());
         return toExamSummary(exam);
     }
@@ -263,12 +268,17 @@ public class ExamService {
         Map<UUID, ExamSection> sectionMap = sections.stream()
                 .collect(Collectors.toMap(ExamSection::getId, Function.identity()));
 
+        // Validate all IDs exist before reordering
+        for (UUID sectionId : request.getOrderedIds()) {
+            if (!sectionMap.containsKey(sectionId)) {
+                throw new ResourceNotFoundException(ErrorCode.SE_EXM_004);
+            }
+        }
+
         int pos = 0;
         for (UUID sectionId : request.getOrderedIds()) {
             ExamSection section = sectionMap.get(sectionId);
-            if (section != null) {
-                section.setPosition(pos++);
-            }
+            section.setPosition(pos++);
         }
         sectionRepository.saveAll(sections);
         log.info("Reordered {} sections in exam {}", sections.size(), examId);
@@ -384,12 +394,17 @@ public class ExamService {
         Map<UUID, ExamQuestion> eqMap = questions.stream()
                 .collect(Collectors.toMap(ExamQuestion::getId, Function.identity()));
 
+        // Validate all IDs exist before reordering
+        for (UUID eqId : request.getOrderedIds()) {
+            if (!eqMap.containsKey(eqId)) {
+                throw new ResourceNotFoundException(ErrorCode.SE_EXM_005);
+            }
+        }
+
         int pos = 0;
         for (UUID eqId : request.getOrderedIds()) {
             ExamQuestion eq = eqMap.get(eqId);
-            if (eq != null) {
-                eq.setPosition(pos++);
-            }
+            eq.setPosition(pos++);
         }
         examQuestionRepository.saveAll(questions);
         log.info("Reordered {} questions in section {}", questions.size(), sectionId);

@@ -18,5 +18,7 @@ public interface ExamRegistrationRepository extends JpaRepository<ExamRegistrati
 
     boolean existsByExamIdAndUserIdAndScheduleId(UUID examId, UUID userId, UUID scheduleId);
 
+    long countByScheduleId(UUID scheduleId);
+
     Optional<ExamRegistration> findByIdAndExamId(UUID id, UUID examId);
 }

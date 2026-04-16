@@ -26,10 +26,12 @@ public class QuestionFolderService {
     private final QuestionFolderRepository folderRepository;
     private final TenantRepository tenantRepository;
 
+    private static final int MAX_TREE_DEPTH = 10;
+
     @Transactional(readOnly = true)
     public List<FolderResponse> getTree(UUID tenantId) {
         List<QuestionFolder> all = folderRepository.findByTenantIdOrderByPositionAscNameAsc(tenantId);
-        return buildTree(all, null);
+        return buildTree(all, null, 0);
     }
 
     @Transactional(readOnly = true)
@@ -107,14 +109,15 @@ public class QuestionFolderService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.SE_QST_004));
     }
 
-    private List<FolderResponse> buildTree(List<QuestionFolder> all, UUID parentId) {
+    private List<FolderResponse> buildTree(List<QuestionFolder> all, UUID parentId, int depth) {
+        if (depth >= MAX_TREE_DEPTH) return List.of();
         return all.stream()
                 .filter(f -> parentId == null
                         ? f.getParent() == null
                         : f.getParent() != null && f.getParent().getId().equals(parentId))
                 .map(f -> {
                     FolderResponse r = toResponseFlat(f);
-                    List<FolderResponse> children = buildTree(all, f.getId());
+                    List<FolderResponse> children = buildTree(all, f.getId(), depth + 1);
                     if (!children.isEmpty()) {
                         r.setChildren(children);
                     }
