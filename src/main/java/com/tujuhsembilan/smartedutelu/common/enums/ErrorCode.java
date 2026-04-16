@@ -99,7 +99,40 @@ public enum ErrorCode {
     // Certificate Errors (SE-CRT-xxx)
     SE_CRT_001("SE-CRT-001", "Certificate template not found"),
     SE_CRT_002("SE-CRT-002", "Certificate not found"),
-    SE_CRT_003("SE-CRT-003", "Certificate number already exists");
+    SE_CRT_003("SE-CRT-003", "Certificate number already exists"),
+
+    // Communication Errors (SE-COM-xxx)
+    SE_COM_001("SE-COM-001", "Announcement not found"),
+    SE_COM_002("SE-COM-002", "Notification not found"),
+    SE_COM_003("SE-COM-003", "Message not found"),
+    SE_COM_004("SE-COM-004", "Channel preference not found"),
+
+    // Calendar Errors (SE-CAL-xxx)
+    SE_CAL_001("SE-CAL-001", "Calendar event not found"),
+
+    // Media Errors (SE-MDA-xxx)
+    SE_MDA_001("SE-MDA-001", "Media file not found"),
+
+    // Tag Errors (SE-TAG-xxx)
+    SE_TAG_001("SE-TAG-001", "Tag not found"),
+    SE_TAG_002("SE-TAG-002", "Tag slug already exists for this type"),
+
+    // Support Ticket Errors (SE-TKT-xxx)
+    SE_TKT_001("SE-TKT-001", "Ticket not found"),
+    SE_TKT_002("SE-TKT-002", "Ticket category not found"),
+    SE_TKT_003("SE-TKT-003", "Ticket priority not found"),
+    SE_TKT_004("SE-TKT-004", "Ticket status not found"),
+    SE_TKT_005("SE-TKT-005", "Ticket message not found"),
+
+    // Logging Errors (SE-LOG-xxx)
+    SE_LOG_001("SE-LOG-001", "Event not found"),
+    SE_LOG_002("SE-LOG-002", "Activity log not found"),
+    SE_LOG_003("SE-LOG-003", "Audit log not found"),
+    SE_LOG_004("SE-LOG-004", "Login log not found"),
+
+    // Webhook Errors (SE-WHK-xxx)
+    SE_WHK_001("SE-WHK-001", "Webhook not found"),
+    SE_WHK_002("SE-WHK-002", "Webhook log not found");
 
     private final String code;
     private final String message;

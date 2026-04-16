@@ -1,0 +1,48 @@
+package com.tujuhsembilan.smartedutelu.domain.logging.entity;
+
+import com.tujuhsembilan.smartedutelu.domain.identity.entity.User;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.OffsetDateTime;
+import java.util.Map;
+import java.util.UUID;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Entity
+@Table(name = "events")
+public class Event {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @EqualsAndHashCode.Include
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(name = "event_type", nullable = false, length = 100)
+    private String eventType;
+
+    @Column(name = "entity_type", length = 100)
+    private String entityType;
+
+    @Column(name = "entity_id")
+    private UUID entityId;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> metadata;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @Builder.Default
+    private OffsetDateTime createdAt = OffsetDateTime.now();
+}
