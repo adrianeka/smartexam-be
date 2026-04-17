@@ -48,6 +48,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // A3: CSRF disabled — access token dikirim via Authorization header (browser
+                // tidak auto-send header cross-origin). Refresh token memang pakai HttpOnly Cookie,
+                // tapi dilindungi SameSite=Strict sehingga CSRF tidak applicable. CSRF disable
+                // tetap justified selama SameSite=Strict dipertahankan di refresh token cookie.
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .headers(headers -> headers

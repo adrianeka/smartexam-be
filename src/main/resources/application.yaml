@@ -83,6 +83,8 @@ application:
       secret-key: ${JWT_SECRET:dGhpc0lzQVN1cGVyU2VjcmV0S2V5Rm9yRGV2ZWxvcG1lbnRPbmx5UGxlYXNlQ2hhbmdlSW5Qcm9k}
       expiration-ms: ${JWT_EXPIRATION:900000} # 15 menit (access token)
       refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000} # 7 Hari (refresh token)
+    cookie:
+      secure: ${COOKIE_SECURE:false} # true di production (HTTPS only), false untuk dev
     # Kunci 256-bit (32 bytes) di-encode Base64 — WAJIB di-set via env var di production
     encryption-key: ${ENCRYPTION_KEY:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
   cors:

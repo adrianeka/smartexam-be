@@ -123,6 +123,10 @@ public class CalendarService {
     }
 
     private void validateEventDates(OffsetDateTime startDate, OffsetDateTime endDate) {
+        // H4: Reject events in the past
+        if (startDate != null && startDate.isBefore(OffsetDateTime.now())) {
+            throw new BusinessException(ErrorCode.SE_CMN_006, "Tanggal mulai tidak boleh di masa lampau");
+        }
         if (startDate != null && endDate != null && !startDate.isBefore(endDate)) {
             throw new BusinessException(ErrorCode.SE_CMN_006, "Tanggal mulai harus sebelum tanggal selesai");
         }

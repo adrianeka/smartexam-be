@@ -28,8 +28,8 @@ public class CreateUserRequest {
 
     @NotBlank(message = "Password wajib diisi")
     @Size(min = 8, max = 100, message = "Password minimal 8 karakter")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$",
-            message = "Password harus mengandung huruf besar, huruf kecil, dan angka")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%!&*_\\-]).{8,}$",
+            message = "Password harus mengandung huruf besar, huruf kecil, angka, dan karakter khusus (@#$%!&*_-)")
     private String password;
 
     @Size(max = 50)

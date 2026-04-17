@@ -170,8 +170,8 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse refreshToken(RefreshTokenRequest request) {
-        String refreshToken = request.getRefreshToken();
+    public LoginResponse refreshToken(String rawRefreshToken) {
+        String refreshToken = rawRefreshToken;
 
         String email;
         UUID sessionId;
