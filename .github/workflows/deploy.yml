@@ -1,0 +1,27 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # Masuk ke folder project sesuai terminal kamu
+            cd ~/smartexam-be
+            
+            # Tarik kode terbaru
+            git pull origin main
+            
+            # Rebuild container app
+            docker compose --profile dev down
+            docker compose --profile dev up -d --build
