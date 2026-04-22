@@ -33,19 +33,14 @@ public class S3Config {
 
     @Bean
     public S3Client s3Client() {
-        return S3Client.builder()
+        S3Client client = S3Client.builder()
                 .endpointOverride(URI.create(endpoint))
                 .region(Region.US_EAST_1)
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKey, secretKey)))
                 .forcePathStyle(true)
                 .build();
-    }
 
-    // H8: Auto-create bucket at startup if it doesn't exist
-    @PostConstruct
-    public void ensureBucketExists() {
-        S3Client client = s3Client();
         try {
             client.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
             log.info("MinIO bucket '{}' sudah ada", bucket);
@@ -55,5 +50,7 @@ public class S3Config {
         } catch (Exception e) {
             log.warn("Tidak bisa memeriksa/membuat bucket '{}': {}", bucket, e.getMessage());
         }
+
+        return client;
     }
 }

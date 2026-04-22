@@ -37,7 +37,8 @@ CREATE TABLE certificates (
     certificate_number  VARCHAR(100)    NOT NULL UNIQUE,
     certificate_url     TEXT,
     metadata            JSONB,
-    issued_at           TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+    issued_at           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    version             BIGINT          NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_certificates_user_id          ON certificates (user_id);

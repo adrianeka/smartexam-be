@@ -96,7 +96,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    @Async
     protected void updateSessionLastActive(UUID sessionId) {
         userSessionRepository.findById(sessionId).ifPresent(session -> {
             session.setLastActive(LocalDateTime.now());
