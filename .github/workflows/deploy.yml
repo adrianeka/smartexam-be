@@ -22,6 +22,8 @@ jobs:
             # Tarik kode terbaru
             git pull origin main
             
-            # Rebuild container app
-            docker compose --profile dev down
-            docker compose --profile dev up -d --build
+            # Build image baru di background
+            docker compose --profile dev build app
+            
+            # Re-create container app. 
+            docker compose --profile dev up -d --no-deps app
