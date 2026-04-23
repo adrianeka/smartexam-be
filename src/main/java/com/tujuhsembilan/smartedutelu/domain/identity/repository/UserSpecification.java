@@ -28,6 +28,20 @@ public final class UserSpecification {
         return (root, query, cb) -> cb.equal(root.get("status"), status);
     }
 
+    public static Specification<User> hasName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%");
+    }
+
+    public static Specification<User> hasEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%");
+    }
+
     public static Specification<User> hasRole(String roleName) {
         if (roleName == null || roleName.isBlank()) {
             return null;

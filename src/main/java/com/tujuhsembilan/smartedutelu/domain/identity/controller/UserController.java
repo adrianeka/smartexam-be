@@ -36,10 +36,12 @@ public class UserController {
     @Operation(summary = "List semua user (paginated, filterable)")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAllUsers(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String email,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String role,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        PageResponse<UserResponse> data = userService.getAllUsers(search, status, role, pageable);
+        PageResponse<UserResponse> data = userService.getAllUsers(search, name, email, status, role, pageable);
         return ResponseEntity.ok(ApiResponse.success("Daftar user berhasil dimuat", data));
     }
 

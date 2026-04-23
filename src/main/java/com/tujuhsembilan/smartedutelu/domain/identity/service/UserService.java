@@ -41,13 +41,27 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public PageResponse<UserResponse> getAllUsers(String search, String status, String role, Pageable pageable) {
-        Specification<User> spec = Specification.where(UserSpecification.search(search))
-                .and(UserSpecification.hasStatus(status))
-                .and(UserSpecification.hasRole(role));
+    public PageResponse<UserResponse> getAllUsers(String search, String name, String email, String status, String role, Pageable pageable) {
+        Specification<User> spec = (root, query, cb) -> cb.conjunction();
 
-        Page<UserResponse> page = userRepository.findAll(spec, pageable)
-                .map(this::toUserResponse);
+        if (search != null && !search.isBlank()) {
+            spec = spec.and(UserSpecification.search(search));
+        }
+        if (name != null && !name.isBlank()) {
+            spec = spec.and(UserSpecification.hasName(name));
+        }
+        if (email != null && !email.isBlank()) {
+            spec = spec.and(UserSpecification.hasEmail(email));
+        }
+        if (status != null && !status.isBlank()) {
+            spec = spec.and(UserSpecification.hasStatus(status));
+        }
+        if (role != null && !role.isBlank()) {
+            spec = spec.and(UserSpecification.hasRole(role));
+        }
+
+        Page<User> userPage = userRepository.findAll(spec, pageable);
+        Page<UserResponse> page = userPage.map(this::toUserResponse);
 
         return PageResponse.of(page);
     }
