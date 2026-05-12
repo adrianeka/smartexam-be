@@ -452,8 +452,8 @@ public class ExamService {
                 .feedbackType(e.getFeedbackType())
                 .instructions(e.getInstructions())
                 .status(e.getStatus())
-                .createdById(e.getCreatedBy().getId())
-                .createdByName(e.getCreatedBy().getName())
+                .createdById(e.getCreatedBy() != null ? e.getCreatedBy().getId() : null)
+                .createdByName(e.getCreatedBy() != null ? e.getCreatedBy().getName() : "Unknown")
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
@@ -492,10 +492,10 @@ public class ExamService {
     private ExamQuestionResponse toExamQuestionResponse(ExamQuestion eq) {
         return ExamQuestionResponse.builder()
                 .id(eq.getId())
-                .questionId(eq.getQuestion().getId())
-                .questionText(eq.getQuestion().getQuestionText())
-                .questionType(eq.getQuestion().getType())
-                .difficultyLevel(eq.getQuestion().getDifficultyLevel())
+                .questionId(eq.getQuestion() != null ? eq.getQuestion().getId() : null)
+                .questionText(eq.getQuestion() != null ? eq.getQuestion().getQuestionText() : "Deleted Question")
+                .questionType(eq.getQuestion() != null ? eq.getQuestion().getType() : null)
+                .difficultyLevel(eq.getQuestion() != null ? eq.getQuestion().getDifficultyLevel() : null)
                 .position(eq.getPosition())
                 .weight(eq.getWeight())
                 .build();

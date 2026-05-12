@@ -22,7 +22,7 @@ public interface ExamRepository extends JpaRepository<Exam, UUID>, JpaSpecificat
 
     @Query("SELECT e FROM Exam e " +
            "LEFT JOIN FETCH e.sections s " +
-           "LEFT JOIN FETCH s.examQuestions " +
+           "LEFT JOIN FETCH e.createdBy " +
            "WHERE e.id = :id AND e.tenant.id = :tenantId")
     Optional<Exam> findByIdAndTenantIdWithDetails(UUID id, UUID tenantId);
 
