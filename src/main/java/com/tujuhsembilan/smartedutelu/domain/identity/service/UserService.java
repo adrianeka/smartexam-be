@@ -42,9 +42,22 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> getAllUsers(String search, String status, String role, Pageable pageable) {
-        Specification<User> spec = Specification.where(UserSpecification.search(search))
-                .and(UserSpecification.hasStatus(status))
-                .and(UserSpecification.hasRole(role));
+        Specification<User> spec = null;
+
+        Specification<User> searchSpec = UserSpecification.search(search);
+        if (searchSpec != null) {
+            spec = searchSpec;
+        }
+
+        Specification<User> statusSpec = UserSpecification.hasStatus(status);
+        if (statusSpec != null) {
+            spec = (spec == null) ? statusSpec : spec.and(statusSpec);
+        }
+
+        Specification<User> roleSpec = UserSpecification.hasRole(role);
+        if (roleSpec != null) {
+            spec = (spec == null) ? roleSpec : spec.and(roleSpec);
+        }
 
         Page<UserResponse> page = userRepository.findAll(spec, pageable)
                 .map(this::toUserResponse);
