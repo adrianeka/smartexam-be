@@ -36,7 +36,7 @@ public class GradingController {
 
     @GetMapping("/attempts/{attemptId}")
     @Operation(summary = "Detail attempt beserta jawaban")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     public ResponseEntity<ApiResponse<AttemptResponse>> getAttempt(@PathVariable UUID attemptId) {
         return ResponseEntity.ok(ApiResponse.success(gradingService.getAttemptDetail(attemptId)));
     }
@@ -53,14 +53,14 @@ public class GradingController {
 
     @PostMapping("/attempts/{attemptId}/finalize")
     @Operation(summary = "Finalisasi penilaian attempt (hitung total skor)")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     public ResponseEntity<ApiResponse<AttemptResponse>> finalizeAttempt(@PathVariable UUID attemptId) {
         return ResponseEntity.ok(ApiResponse.success(gradingService.finalizeAttempt(attemptId)));
     }
 
     @GetMapping("/results")
     @Operation(summary = "Daftar hasil ujian (filter: examId)")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     public ResponseEntity<ApiResponse<PageResponse<AttemptResponse>>> listResults(
             @RequestParam(required = false) UUID examId,
             @PageableDefault(size = 20) Pageable pageable) {

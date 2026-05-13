@@ -31,12 +31,12 @@ public class ExamController {
     private final ExamService examService;
 
     // ══════════════════════════════════════════════════════════════════════════════
-    //  EXAM CRUD (7 endpoints)
+    // EXAM CRUD (7 endpoints)
     // ══════════════════════════════════════════════════════════════════════════════
 
     @GetMapping
     @Operation(summary = "Daftar ujian dengan filter & pagination")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     public ResponseEntity<ApiResponse<PageResponse<ExamResponse>>> listExams(
             @RequestParam UUID tenantId,
             @RequestParam(required = false) String status,
@@ -49,13 +49,14 @@ public class ExamController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        PageResponse<ExamResponse> result = examService.listExams(tenantId, status, examType, categoryId, keyword, pageable);
+        PageResponse<ExamResponse> result = examService.listExams(tenantId, status, examType, categoryId, keyword,
+                pageable);
         return ResponseEntity.ok(ApiResponse.success("Daftar ujian berhasil diambil", result));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Detail ujian lengkap (+ sections + questions)")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     public ResponseEntity<ApiResponse<ExamResponse>> getExam(
             @RequestParam UUID tenantId,
             @PathVariable UUID id) {
@@ -115,7 +116,7 @@ public class ExamController {
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
-    //  SECTIONS (5 endpoints)
+    // SECTIONS (5 endpoints)
     // ══════════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/{examId}/sections")
@@ -175,7 +176,7 @@ public class ExamController {
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
-    //  EXAM QUESTIONS inside sections (5 endpoints)
+    // EXAM QUESTIONS inside sections (5 endpoints)
     // ══════════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/{examId}/sections/{sectionId}/questions")
@@ -235,7 +236,8 @@ public class ExamController {
             @PathVariable UUID examId,
             @PathVariable UUID sectionId,
             @Valid @RequestBody ReorderRequest request) {
-        List<ExamQuestionResponse> questions = examService.reorderSectionQuestions(tenantId, examId, sectionId, request);
+        List<ExamQuestionResponse> questions = examService.reorderSectionQuestions(tenantId, examId, sectionId,
+                request);
         return ResponseEntity.ok(ApiResponse.success("Urutan soal berhasil diperbarui", questions));
     }
 }
