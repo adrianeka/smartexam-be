@@ -36,7 +36,7 @@ public class ExamController {
 
     @GetMapping
     @Operation(summary = "Daftar ujian dengan filter & pagination")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     public ResponseEntity<ApiResponse<PageResponse<ExamResponse>>> listExams(
             @RequestParam UUID tenantId,
             @RequestParam(required = false) String status,
